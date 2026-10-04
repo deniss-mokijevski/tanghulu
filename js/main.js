@@ -16,32 +16,42 @@ var Game = {
         "Usually a comma or a quote mark is missing. Undo your last change in config.js and reload.</p>";
       return;
     }
-    this.checkConfig();
-    Progress.load();
-    Stage.init();
-    Effects.init();
-    Sound.init();
-    this.applySettings();
+    try {
+      this.checkConfig();
+      Progress.load();
+      Stage.init();
+      Effects.init();
+      Sound.init();
+      this.applySettings();
 
-    // Start looking for drawings and recordings straight away.
-    Assets.preloadAll();
-    Sound.preloadAll();
+      // Start looking for drawings and recordings straight away.
+      Assets.preloadAll();
+      Sound.preloadAll();
 
-    Shop.init();
-    Jar.init();
-    Parent.init();
-    Hint.init();
+      Shop.init();
+      Jar.init();
+      Parent.init();
+      Hint.init();
 
-    this.showTitle();
-    this.stopBrowserGestures();
+      this.showTitle();
+      this.stopBrowserGestures();
+      this.watchOrientation();
 
-    var self = this;
-    // The ▶ button. "click"/"touchend" (not "pointerdown") because
-    // iPads only switch sound on from these.
-    var play = $("#play-button");
-    play.addEventListener("click", function () { self.play(); });
-    play.addEventListener("touchend", function () { self.play(); });
-    onTap($("#repeat-button"), function () { self.sayInstruction(); });
+      var self = this;
+      // The ▶ button. "click"/"touchend" (not "pointerdown") because
+      // iPads only switch sound on from these.
+      var play = $("#play-button");
+      play.addEventListener("click", function () { self.play(); });
+      play.addEventListener("touchend", function () { self.play(); });
+      onTap($("#repeat-button"), function () { self.sayInstruction(); });
+    } catch (error) {
+      // Something in config.js has the wrong shape: tell the grown-up.
+      document.body.innerHTML =
+        "<p style='font:24px sans-serif;padding:40px;line-height:1.5;background:#fff'>" +
+        "⚠️ Something in config.js is not right, so the game can't start.<br>" +
+        "Undo your last change in config.js and reload.<br>" +
+        "<small>(" + String(error.message).replace(/</g, "&lt;") + ")</small></p>";
+    }
   },
 
   // Fix up config.js values the game can't use, and warn about mistakes
@@ -103,6 +113,7 @@ var Game = {
   play: function () {
     if (this.screen !== "title") return;
     Sound.unlock();
+    this.goFullscreen();
     this.screen = "shop";
     document.body.classList.remove("on-title");
     $("#title-screen").classList.add("hidden");
@@ -113,9 +124,14 @@ var Game = {
     this.step++;
     Hint.restart();
     if (!document.querySelector("#shelf-grid .food-button")) {
-      // No foods to start with (empty starterFoods): go straight to a jar.
-      Sound.speak([Sound.phrasePart("welcome")]);
-      this.afterStick();
+      // No foods to start with (empty starterFoods): say hello, then
+      // go straight to a jar.
+      var self = this;
+      this.busy = true;
+      Promise.race([Sound.speak([Sound.phrasePart("welcome")]), wait(4000)]).then(function () {
+        self.busy = false;
+        self.afterStick();
+      });
       return;
     }
     Sound.speak([Sound.phrasePart("welcome"), Sound.phrasePart("tapFood")]);
@@ -146,6 +162,7 @@ var Game = {
     if (this.screen === "title" || this.busy || this.paused()) return;
     var parts = this.instruction();
     if (!parts.length) return;
+    if (this.screen === "jar") clearTimeout(Jar.introTimer); // she asked already: say it once
     var button = $("#repeat-button");
     var turn = this.talkTurn = (this.talkTurn || 0) + 1;
     var self = this;
@@ -181,7 +198,10 @@ var Game = {
      ------------------------------------------------------------------- */
   afterStick: async function () {
     // Wait while a grown-up is on the parent screen (or the tablet is upright).
+    // Taps stay blocked meanwhile, so nothing starts before the jar.
+    this.busy = true;
     while (this.paused()) await wait(500);
+    this.busy = false;
     var jar = Levels.nextJar();
     if (jar) {
       Jar.open(jar);
@@ -310,6 +330,39 @@ var Game = {
     }
   },
 
+  // Android tablets: go fullscreen when ▶ is tapped (hides the browser's
+  // bars, so everything is bigger) and keep the screen sideways.
+  // Not on iPads: there the fullscreen "X" button would sit on top of 🔊.
+  goFullscreen: function () {
+    if (!CONFIG.fullscreenOnAndroid || !/Android/i.test(navigator.userAgent)) return;
+    var page = document.documentElement;
+    var request = page.requestFullscreen || page.webkitRequestFullscreen;
+    if (!request || document.fullscreenElement) return;
+    try {
+      var result = request.call(page);
+      if (result && result.then) {
+        result.then(function () {
+          if (screen.orientation && screen.orientation.lock) {
+            screen.orientation.lock("landscape").catch(function () {});
+          }
+        }).catch(function () {});
+      }
+    } catch (error) { /* fullscreen not allowed: play in the normal tab */ }
+  },
+
+  // Held upright? Say "please turn the tablet" (the picture shows too).
+  watchOrientation: function () {
+    if (!window.matchMedia) return;
+    var portrait = window.matchMedia("(orientation: portrait)");
+    var handler = function () {
+      if (portrait.matches && Sound.unlocked && !Parent.isOpen) {
+        Sound.speak([Sound.phrasePart("turnTablet")], true);
+      }
+    };
+    if (portrait.addEventListener) portrait.addEventListener("change", handler);
+    else if (portrait.addListener) portrait.addListener(handler); // older iPads
+  },
+
   // Stop pinch-zoom, long-press menus and double-tap zoom.
   stopBrowserGestures: function () {
     ["gesturestart", "gesturechange", "dblclick", "contextmenu"].forEach(function (name) {
@@ -329,6 +382,7 @@ var Game = {
 function isDark(color) {
   var probe = make("span");
   probe.style.color = color;
+  if (!probe.style.color) return false; // not a real color: keep the light look
   document.body.appendChild(probe);
   var rgb = getComputedStyle(probe).color.match(/\d+(\.\d+)?/g) || [255, 255, 255];
   probe.remove();

@@ -21,7 +21,8 @@
        the customer:  assets/characters/bear.png
        each place:    assets/backgrounds/kitchen.png  (beach.png, space.png)
      Use lowercase file names. .png is best (see-through background),
-     but .jpg/.jpeg/.webp also work, and drawings on white paper are fine.
+     but .jpg/.jpeg also work (.webp only on iPadOS 14 or newer),
+     and drawings on white paper are fine.
 
    SOUNDS (your recordings) — all optional, the game talks without them
      Letter sounds:  assets/sounds/letters/s.mp3   (or s.m4a)
@@ -67,6 +68,7 @@ var CONFIG = {
   knownAfter: 3,                  // a letter counts as "known" after this many first-try answers in a row
   parentHoldSeconds: 3,           // hold the ⚙️ corner this long to open the parent screen
   cleanUpPaper: true,             // make white paper behind a drawing see-through (true / false)
+  fullscreenOnAndroid: true,      // Android tablets: fullscreen + sideways after tapping ▶ (true / false)
   imageTypes: ["png", "jpg", "jpeg", "webp"],   // picture file types the game looks for
   // Font for the big letters on the jar buttons. The tablet uses the first
   // one it has. These are school-like fonts with a round "a" (casual = Android).
@@ -182,5 +184,6 @@ var CONFIG = {
     again:     "Let's make another candy stick!",
     newPlace:  "You opened all the jars! Let's go somewhere new!",
     allDone:   "Wow! You know all the letters! You are a candy star!",
+    turnTablet: "Please turn the tablet sideways!",
   },
 };

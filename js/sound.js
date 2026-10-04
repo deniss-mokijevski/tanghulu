@@ -332,6 +332,11 @@ var Sound = {
     }
     this.speaking = true;
     for (var i = 0; i < parts.length; i++) {
+      // Tablet turned upright in the middle of a sentence: stop here.
+      if (!always && Game.paused()) {
+        if (token === this.voiceToken) this.speaking = false;
+        return false;
+      }
       var part = parts[i];
       var clip = part.file ? await this.findQuick(part.file) : null;
       if (token !== this.voiceToken) return false;

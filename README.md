@@ -92,9 +92,10 @@ phone/tablet icon and choose "iPad", for example.
 - **iPad (Safari):** tap the Share button → **Add to Home Screen**, then always start the game
   from that icon. Do this **before** she starts playing: the icon keeps its own progress,
   separate from Safari tabs.
-- **Android (Chrome):** over home Wi-Fi (`http://192.168…`) Chrome can only add a normal
-  shortcut, which still opens with the address bar. For a real fullscreen app on Android, use
-  the online version (section 3) and tap ⋮ → **Install app** there.
+- **Android (Chrome):** the game switches to fullscreen and sideways by itself when she taps ▶
+  (turn this off with `fullscreenOnAndroid: false` in `config.js`). A shortcut is handy too:
+  over home Wi-Fi (`http://192.168…`) Chrome can only add a normal shortcut (⋮ → **Add to Home
+  screen**); with the online version (section 3) you can use ⋮ → **Install app**.
 
 **Keep her inside the game (optional):**
 
@@ -196,8 +197,9 @@ You can change:
 - Game rules: how many foods fit on a stick, how long until the 👆 hint, how often a review jar comes, etc.
 
 Keep the quotes and commas as they are. After saving, reload the game.
-If the game shows a "config.js has a typo" message after an edit, a comma or quote is
-probably missing. Undo your last change and try again.
+If the game shows a "config.js has a typo" (or "is not right") message after an edit, or ▶
+does nothing, a comma, quote or bracket is probably missing or extra. Undo your last change
+and try again.
 
 **Adding a food:** copy a food line inside a level, give it a new `id` (this is also its
 file name), an `emoji`, a `word` and a `letter`. A place can have more or fewer than 4 foods.
@@ -307,6 +309,7 @@ Say the **sound**, short and clean, without adding "uh" (say "t", not "tuh").
 | `again.mp3` | "Let's make another candy stick!" |
 | `newPlace.mp3` | "You opened all the jars! Let's go somewhere new!" |
 | `allDone.mp3` | "Wow! You know all the letters! You are a candy star!" |
+| `turnTablet.mp3` | "Please turn the tablet sideways!" (when the tablet is held upright) |
 | `place-kitchen.mp3` | "Welcome to the kitchen!" |
 | `place-beach.mp3` | "Welcome to the beach!" |
 | `place-space.mp3` | "Welcome to space!" |
@@ -373,8 +376,8 @@ It shows:
 
 **The buttons look small**
 - The game scales to the screen. Buttons are at least 80 px when the browser window is
-  about 900 × 560 or bigger. Close extra toolbars, use the Home Screen icon, or use the
-  online version for fullscreen.
+  about 900 × 560 or bigger. On Android the game goes fullscreen after ▶, which helps on
+  small tablets. On iPad, start it from the Home Screen icon (no Safari bars).
 
 **The tablet can't open `http://192.168…`**
 - Is the server still running on the computer? Is the tablet on the same Wi-Fi (not a guest network)?

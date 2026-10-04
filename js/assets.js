@@ -240,7 +240,7 @@ function allFoods() {
   CONFIG.levels.forEach(function (level) {
     level.foods.forEach(function (food) { list.push(food); });
   });
-  return list;
+  return list.filter(Boolean); // a stray extra comma in config.js leaves a gap
 }
 
 // Find a food by its id.

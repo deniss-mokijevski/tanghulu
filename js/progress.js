@@ -76,9 +76,12 @@ var Progress = {
     this.save();
   },
 
-  // Foods without a letter (like the starter foods) are always unlocked.
+  // Starter foods, and level foods without a letter, are always unlocked.
   // The others are unlocked by opening their jar.
   isUnlocked: function (foodId) {
+    for (var i = 0; i < CONFIG.starterFoods.length; i++) {
+      if (CONFIG.starterFoods[i] && CONFIG.starterFoods[i].id === foodId) return true;
+    }
     var food = foodById(foodId);
     if (food && !food.letter) return true;
     return this.data.unlocked.indexOf(foodId) !== -1;
