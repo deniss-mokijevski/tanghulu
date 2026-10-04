@@ -38,7 +38,7 @@ var Shop = {
     var grid = $("#shelf-grid");
     grid.innerHTML = "";
     var foods = allFoods().filter(function (food) { return Progress.isUnlocked(food.id); });
-    grid.classList.toggle("small", foods.length > 16); // lots of foods → smaller buttons
+    this.fitShelf(foods.length);
     foods.forEach(function (food) {
       var button = make("button", "food-button");
       button.type = "button";
@@ -50,6 +50,25 @@ var Shop = {
       onTap(button, function () { self.tapFood(food, button); });
       grid.appendChild(button);
     });
+  },
+
+  // Pick the button size so that every food fits on the shelf.
+  // Up to 16 foods get big 92 px buttons; more foods make them smaller.
+  fitShelf: function (count) {
+    var width = 386, height = 420;  // the inside of the shelf, in pixels
+    var gap = 6, rowGap = 12;
+    var cols, cell, rows;
+    for (cols = 4; cols < 12; cols++) {
+      if (cols > 4) rowGap = 8;        // pack a little tighter when it's crowded
+      cell = Math.min(92, Math.floor((width - (cols - 1) * gap) / cols));
+      rows = Math.ceil(count / cols);
+      if (rows * (cell + 4) + (rows - 1) * rowGap <= height) break;
+    }
+    var shelf = $("#shelf");
+    shelf.style.setProperty("--cols", cols);
+    shelf.style.setProperty("--cell", cell + "px");
+    shelf.style.setProperty("--row", (cell + 4 + rowGap) + "px");
+    $("#shelf-grid").classList.toggle("small", cell < 80);
   },
 
   // A small ⭐ on foods she reviewed (with a number when there are more).
@@ -185,6 +204,10 @@ var Shop = {
       return { transform: "translate(" + x + "px," + y + "px) rotate(" + turn + "deg)" };
     }
 
+    // The bear steps back while the stick swings past.
+    var customer = $("#customer");
+    customer.style.zIndex = "1";
+
     Sound.fx("whoosh");
     var steps = [
       pose(0, 0, 0),
@@ -214,6 +237,7 @@ var Shop = {
     }, time * 0.8);
 
     await wait(time + 50);
+    customer.style.zIndex = "";
     this.coated = true;
     stick.classList.add("coated");
 
@@ -301,7 +325,7 @@ var Shop = {
       // Sour lemon: pucker and shake!
       replayClass(body, "sour", 1200);
       Sound.fx("sour");
-      Effects.floatUp(bearAt.x, bearAt.y - 90, ["💦", "💫", "🍋"], 5);
+      Effects.floatUp(bearAt.x, bearAt.y - 90, ["💦", "💫", food.emoji || "🍋"], 5);
       await wait(900);
     } else {
       replayClass(body, "happy", 800);

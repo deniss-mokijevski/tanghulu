@@ -39,7 +39,7 @@ var Hint = {
   },
 
   show: function () {
-    if (Game.busy || Parent.isOpen || document.hidden) {
+    if (Game.busy || Game.paused()) {
       this.later();
       return;
     }
@@ -50,8 +50,10 @@ var Hint = {
     }
 
     // Point up at things in the top half, down at things in the bottom half.
+    // (Shelf foods always get the hand below them, so it doesn't cover
+    // the food in the row above.)
     var where = Stage.where(target);
-    var pointUp = where.y < Stage.height * 0.55;
+    var pointUp = where.y < Stage.height * 0.55 || target.classList.contains("food-button");
     this.hand.textContent = pointUp ? "👆" : "👇";
     this.hand.classList.toggle("down", !pointUp);
     this.hand.style.left = where.x + "px";

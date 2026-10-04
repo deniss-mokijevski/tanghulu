@@ -15,7 +15,7 @@
   --amber: #ffb02e;
   --ink: #5a3a2e;
   --emoji-font: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif;
-  --round-font: "Chalkboard SE", "Comic Sans MS", "Comic Neue", "Arial Rounded MT Bold", "Trebuchet MS", system-ui, sans-serif;
+  --round-font: "Chalkboard SE", "Comic Sans MS", "Comic Neue", casual, "Arial Rounded MT Bold", "Trebuchet MS", system-ui, sans-serif;
 }
 
 /* ---------- The page: no scrolling, no zooming, no text selecting ---------- */
@@ -97,10 +97,11 @@ body.on-title #decorations .decoration.top { display: none; }  /* keep the title
   bottom: 10px;
   right: auto;
   opacity: 0.8;
+  z-index: 10;                         /* above the shop counter */
 }
 /* Space-like dark rooms get light text where needed */
 body.dark-room #game-title { text-shadow: 0 4px 0 #2b2d6e, 0 8px 12px rgba(0, 0, 0, 0.4); }
-body.dark-room #artist-line { color: #fff; }
+body.dark-floor #artist-line { color: #fff; }   /* the artist line sits on the floor */
 
 /* ---------- The stage ---------- */
 #stage {
@@ -232,16 +233,16 @@ body.dark-room #artist-line { color: #fff; }
 /* ---------- Top: 🔊 button and level bar ---------- */
 #repeat-button {
   position: absolute;
-  left: 16px;
-  top: 14px;
-  width: 88px;
-  height: 88px;
+  left: 14px;
+  top: 8px;
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
   background: #fff;
   box-shadow: 0 6px 0 rgba(0, 0, 0, 0.15);
   font-family: var(--emoji-font);
-  font-size: 46px;
-  line-height: 88px;
+  font-size: 52px;
+  line-height: 100px;
   text-align: center;
   z-index: 30;
 }
@@ -279,38 +280,46 @@ body.dark-room #artist-line { color: #fff; }
 .level-slot.just-won { animation: pop-in 0.6s ease-out; }
 
 /* ---------- Shelf ---------- */
+/* shop.js picks the button size (--cell) and the row spacing (--row) so
+   that all unlocked foods fit. With up to 16 foods the buttons are 92 px. */
 #shelf {
+  --cell: 92px;
+  --row: 108px;                        /* one row + the gap below it */
   position: absolute;
-  left: 16px;
-  top: 112px;
-  width: 392px;
-  height: 448px;
+  left: 12px;
+  top: 108px;
+  width: 422px;
+  height: 456px;
   box-sizing: border-box;
-  padding: 10px 12px;
+  padding: 10px 10px;
   border-radius: 18px;
   background:
-    /* wooden boards under each row */
-    repeating-linear-gradient(to bottom, transparent 0, transparent 92px, var(--wood-dark) 92px, var(--wood-dark) 104px, transparent 104px, transparent 107px),
+    /* a wooden board under each row */
+    repeating-linear-gradient(to bottom,
+      transparent 0, transparent calc(var(--cell) + 4px),
+      var(--wood-dark) calc(var(--cell) + 4px), var(--wood-dark) calc(var(--row) - 1px),
+      transparent calc(var(--row) - 1px), transparent var(--row)),
     linear-gradient(#f1d3a8, #e7c08c);
+  background-position: 0 10px, 0 0;
   border: 8px solid var(--wood);
   box-shadow: 0 8px 0 rgba(0, 0, 0, 0.15);
 }
 #shelf-grid {
   display: grid;
-  grid-template-columns: repeat(4, 84px);
-  grid-auto-rows: 92px;
-  row-gap: 15px;
+  grid-template-columns: repeat(var(--cols, 4), var(--cell));
+  grid-auto-rows: calc(var(--cell) + 4px);
+  row-gap: calc(var(--row) - var(--cell) - 4px);
   column-gap: 6px;
+  align-items: end;
 }
-#shelf-grid.small { grid-template-columns: repeat(5, 66px); grid-auto-rows: 74px; row-gap: 12px; }
 .food-button {
   position: relative;
-  width: 84px;
-  height: 84px;
-  font-size: 58px;
+  width: var(--cell);
+  height: var(--cell);
+  font-size: calc(var(--cell) * 0.68);
   transition: transform 0.15s;
 }
-#shelf-grid.small .food-button { width: 66px; height: 66px; font-size: 44px; }
+#shelf-grid.small .badge { width: 22px; height: 22px; font-size: 13px; right: -5px; bottom: -5px; }
 .food-button:active { transform: scale(0.92); }
 .food-button.wiggle { animation: wiggle 0.5s ease-in-out; }
 .food-button.arriving { visibility: hidden; }
@@ -346,10 +355,10 @@ body.dark-room #artist-line { color: #fff; }
 /* ---------- Counter ---------- */
 #counter {
   position: absolute;
-  left: -40px;
+  left: -600px;                        /* wide, so it reaches the screen edges */
   top: 566px;
-  width: 1080px;
-  height: 280px;
+  width: 2200px;
+  height: 474px;
   border-radius: 14px 14px 0 0;
   background:
     repeating-linear-gradient(90deg, #ff8fb1 0, #ff8fb1 40px, #fff3f7 40px, #fff3f7 80px);
@@ -369,7 +378,7 @@ body.dark-room #artist-line { color: #fff; }
 }
 #stick-area {
   position: absolute;
-  left: 825px;                        /* = 425px on the stage */
+  left: 840px;                        /* = 440px on the stage */
   top: 660px;                         /* = 60px on the stage */
   width: 140px;
   height: 540px;
@@ -378,7 +387,7 @@ body.dark-room #artist-line { color: #fff; }
 }
 #stick-holder {                       /* a little cup that holds the stick */
   position: absolute;
-  left: 465px;
+  left: 480px;
   top: 548px;
   width: 60px;
   height: 44px;
@@ -472,7 +481,7 @@ body.dark-room #artist-line { color: #fff; }
 /* ---------- The pot of syrup ---------- */
 #pot-back {
   position: absolute;
-  left: 600px;
+  left: 620px;
   top: 418px;
   width: 200px;
   height: 70px;
@@ -508,7 +517,7 @@ body.dark-room #artist-line { color: #fff; }
 }
 #pot-front {
   position: absolute;
-  left: 596px;
+  left: 616px;
   top: 452px;
   width: 208px;
   height: 140px;
@@ -540,7 +549,7 @@ body.dark-room #artist-line { color: #fff; }
 .pot-handle.right { right: -24px; border-radius: 0 20px 20px 0; border-left: none; }
 #pot-button {
   position: absolute;
-  left: 580px;
+  left: 600px;
   top: 400px;
   width: 240px;
   height: 200px;
@@ -557,7 +566,7 @@ body.dark-room #artist-line { color: #fff; }
 /* ---------- The customer (bear) ---------- */
 #customer {
   position: absolute;
-  left: 740px;
+  left: 746px;
   top: 104px;
   width: 240px;
   height: 290px;
@@ -632,7 +641,7 @@ body.dark-room #artist-line { color: #fff; }
   height: 260px;
   box-sizing: border-box;
   border-radius: 46px 46px 60px 60px;
-  background: rgba(220, 245, 255, 0.55);
+  background: rgba(220, 245, 255, 0.88);
   border: 6px solid rgba(255, 255, 255, 0.9);
   box-shadow: inset 0 -20px 30px rgba(120, 180, 210, 0.35), 0 10px 20px rgba(0, 0, 0, 0.2);
   overflow: hidden;
@@ -648,7 +657,7 @@ body.dark-room #artist-line { color: #fff; }
 /* The hidden food: a dark outline until the jar opens */
 #jar-food .picture {
   filter: brightness(0) drop-shadow(0 0 3px rgba(255, 255, 255, 0.9));
-  opacity: 0.7;
+  opacity: 0.75;
   transition: filter 0.6s, opacity 0.6s, transform 0.6s;
 }
 #jar-food.revealed .picture {
@@ -722,10 +731,10 @@ body.dark-room #artist-line { color: #fff; }
 .letter-button:nth-child(3) { animation-delay: 0.16s; }
 .letter-button:nth-child(4) { animation-delay: 0.24s; }
 .letter-button:active { transform: translateY(6px); box-shadow: 0 4px 0 #e4c9d3; }
-.letter-button.tried { opacity: 0.55; }
+.letter-button.tried { color: rgba(74, 59, 143, 0.3); animation: none; }  /* no pop-in again */
 .letter-button.wiggle { animation: wiggle 0.5s ease-in-out; }
 .letter-button.glow { animation: soft-glow 1.4s ease-in-out infinite; }
-.letter-button.right { background: #d9ffe6; box-shadow: 0 10px 0 #8fe0ad, 0 0 30px 10px #fff59a; transform: scale(1.08); }
+.letter-button.right { background: #d9ffe6; box-shadow: 0 10px 0 #8fe0ad, 0 0 30px 10px #fff59a; transform: scale(1.08); animation: none; }
 
 /* ---------- Pointing hand ---------- */
 #hint-hand {
@@ -1012,7 +1021,7 @@ body.dark-room #artist-line { color: #fff; }
   50%, 80% { transform: rotate(-90deg); }
   100% { transform: rotate(0); }
 }
-@media (orientation: portrait) and (max-aspect-ratio: 4/5) {
+@media (orientation: portrait) {
   #turn-notice { display: flex; }
   body.parent-open #turn-notice { display: none; }  /* grown-ups may hold it upright */
 }

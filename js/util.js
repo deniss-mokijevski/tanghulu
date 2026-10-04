@@ -46,8 +46,9 @@ function onTap(element, handler) {
   }
   if (window.PointerEvent) {
     element.addEventListener("pointerdown", function (event) {
-      if (event.button > 0) return;          // ignore right mouse button
-      if (event.isPrimary === false) return; // ignore a second finger
+      if (event.button > 0) return; // ignore the right mouse button
+      // (A second finger is fine: a thumb resting on the tablet's edge
+      // must not stop her taps from working.)
       run(event);
     });
   } else {
@@ -65,6 +66,11 @@ function replayClass(element, className, ms) {
   if (ms) {
     setTimeout(function () { element.classList.remove(className); }, ms);
   }
+}
+
+// The language from config.js written the way browsers expect ("es-ES").
+function languageTag() {
+  return String(CONFIG.language || "en-US").trim().replace("_", "-");
 }
 
 // Fill in {letter} / {word} style blanks in a sentence.

@@ -77,12 +77,14 @@ var Levels = {
     var every = CONFIG.reviewEvery || 0;
     var review = false;
 
+    var counted = false; // does this jar count towards the review rule?
+
     if (this.allDone()) {
       review = true;
     } else if (this.isDone(0) && every >= 2) {
-      Progress.data.jarsAfterLevel1 += 1;
-      Progress.save();
-      review = Progress.data.jarsAfterLevel1 % every === 0;
+      // The count goes up when the jar is solved (see countJar).
+      counted = true;
+      review = (Progress.data.jarsAfterLevel1 + 1) % every === 0;
     }
 
     var food = review ? this.pickReviewFood() : this.nextLockedFood(index);
@@ -91,7 +93,13 @@ var Levels = {
       food = review ? this.pickReviewFood() : this.nextLockedFood(index);
     }
     if (!food) return null;
-    return { food: food, review: review, letters: this.choicesFor(food, index) };
+    return { food: food, review: review, counted: counted, letters: this.choicesFor(food, index) };
+  },
+
+  // A jar after level 1 was solved: count it.
+  countJar: function () {
+    Progress.data.jarsAfterLevel1 += 1;
+    Progress.save();
   },
 
   // Pick an unlocked food to review. Missed letters get more "tickets".

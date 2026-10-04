@@ -67,7 +67,7 @@ var Sound = {
     });
     document.addEventListener("visibilitychange", function () {
       if (document.hidden) {
-        self.stopVoice();
+        self.silence(); // stop talking, including the rest of a sentence
         if (self.musicEl) self.musicEl.pause();
       } else {
         self.wake();
@@ -321,9 +321,15 @@ var Sound = {
 
   // Say the parts one after another. Starting a new sentence stops
   // the old one. Gives back a promise that ends when everything was said.
-  speak: async function (parts) {
+  // While the game is paused (parent screen, tablet upright) it stays
+  // quiet, unless "always" is true (the parent screen's test button).
+  speak: async function (parts, always) {
     var token = ++this.voiceToken;
     this.stopVoice();
+    if (!always && Game.paused()) {
+      this.speaking = false;
+      return false;
+    }
     this.speaking = true;
     for (var i = 0; i < parts.length; i++) {
       var part = parts[i];
@@ -376,7 +382,7 @@ var Sound = {
       await wait(80); // Safari needs a breath between stop and start
     }
     var utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = CONFIG.language;
+    utterance.lang = languageTag();
     if (this.voice) utterance.voice = this.voice;
     utterance.rate = CONFIG.speechRate || 1;
     utterance.pitch = CONFIG.speechPitch || 1;
@@ -413,7 +419,7 @@ var Sound = {
 
   // The voices that speak the game's language, best first.
   voicesForLanguage: function () {
-    var wanted = String(CONFIG.language).toLowerCase().replace("_", "-");
+    var wanted = languageTag().toLowerCase();
     var short = wanted.split("-")[0];
     var self = this;
     return this.voices

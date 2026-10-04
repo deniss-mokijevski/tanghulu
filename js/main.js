@@ -8,6 +8,15 @@ var Game = {
   step: 0,          // goes up whenever "what to do next" changes
 
   start: function () {
+    // config.js has a typo (a missing comma or quote): tell the grown-up.
+    if (typeof CONFIG === "undefined") {
+      document.body.innerHTML =
+        "<p style='font:24px sans-serif;padding:40px;line-height:1.5;background:#fff'>" +
+        "⚠️ config.js has a typo, so the game can't start.<br>" +
+        "Usually a comma or a quote mark is missing. Undo your last change in config.js and reload.</p>";
+      return;
+    }
+    this.checkConfig();
     Progress.load();
     Stage.init();
     Effects.init();
@@ -35,6 +44,21 @@ var Game = {
     onTap($("#repeat-button"), function () { self.sayInstruction(); });
   },
 
+  // Fix up config.js values the game can't use, and warn about mistakes
+  // (warnings show in the browser's developer console).
+  checkConfig: function () {
+    // The stick has room for 1 to 5 foods.
+    CONFIG.maxOnStick = Math.max(1, Math.min(5, Math.round(CONFIG.maxOnStick) || 5));
+    CONFIG.levels.forEach(function (level) {
+      level.foods.forEach(function (food) {
+        if (!food.letter) {
+          console.warn("config.js: the food \"" + food.id + "\" in level \"" + level.id +
+            "\" has no letter, so it is on the shelf from the start.");
+        }
+      });
+    });
+  },
+
   // Volume, music, letters and voice from the parent screen.
   applySettings: function () {
     var settings = Progress.settings();
@@ -52,8 +76,9 @@ var Game = {
     document.body.classList.add("on-title");
     document.title = CONFIG.title;
     $("#game-title").textContent = CONFIG.title;
-    document.documentElement.lang = CONFIG.language;
-    $("#artist-line").textContent = (CONFIG.artBy || "Art by") + " " + CONFIG.artist + " 🖍️";
+    document.documentElement.lang = languageTag();
+    var artBy = CONFIG.artBy !== undefined ? CONFIG.artBy : "Art by";
+    $("#artist-line").textContent = [artBy, CONFIG.artist, "🖍️"].filter(Boolean).join(" ");
 
     // A finished candy stick with the starter foods, and the customer.
     var stick = $("#title-stick");
@@ -87,6 +112,12 @@ var Game = {
     Shop.enter();
     this.step++;
     Hint.restart();
+    if (!document.querySelector("#shelf-grid .food-button")) {
+      // No foods to start with (empty starterFoods): go straight to a jar.
+      Sound.speak([Sound.phrasePart("welcome")]);
+      this.afterStick();
+      return;
+    }
     Sound.speak([Sound.phrasePart("welcome"), Sound.phrasePart("tapFood")]);
   },
 
@@ -110,13 +141,25 @@ var Game = {
   },
 
   // The 🔊 button (and the idle hint) say the instruction again.
+  // (Not during animations, so it never cuts off "sss… strawberry!")
   sayInstruction: function () {
-    if (this.screen === "title" || Parent.isOpen) return;
+    if (this.screen === "title" || this.busy || this.paused()) return;
+    var parts = this.instruction();
+    if (!parts.length) return;
     var button = $("#repeat-button");
+    var turn = this.talkTurn = (this.talkTurn || 0) + 1;
+    var self = this;
     button.classList.add("talking");
-    Sound.speak(this.instruction()).then(function () {
-      button.classList.remove("talking");
+    Sound.speak(parts).then(function () {
+      if (self.talkTurn === turn) button.classList.remove("talking");
     });
+  },
+
+  // Is the game on hold? (parent screen open, page hidden, or the
+  // tablet held upright so the "please turn me" picture shows)
+  paused: function () {
+    if (Parent.isOpen || document.hidden) return true;
+    return getComputedStyle($("#turn-notice")).display !== "none";
   },
 
   // Which thing should the 👆 hand point at?
@@ -136,7 +179,9 @@ var Game = {
   /* -------------------------------------------------------------------
      After every finished stick: a letter jar
      ------------------------------------------------------------------- */
-  afterStick: function () {
+  afterStick: async function () {
+    // Wait while a grown-up is on the parent screen (or the tablet is upright).
+    while (this.paused()) await wait(500);
     var jar = Levels.nextJar();
     if (jar) {
       Jar.open(jar);
@@ -162,7 +207,8 @@ var Game = {
     var colors = level.colors || {};
     $("#room-wall").style.background = colors.wall || "#ffe7c4";
     $("#room-floor").style.background = colors.floor || "#e5a96f";
-    document.body.classList.toggle("dark-room", isDark(colors.wall || "#ffffff"));
+    document.body.classList.toggle("dark-room", isDark(colors.wall || "#ffe7c4"));
+    document.body.classList.toggle("dark-floor", isDark(colors.floor || "#e5a96f"));
 
     // Emoji decorations in free spots around the shop.
     var spots = [
@@ -254,9 +300,14 @@ var Game = {
 
   // How a letter is shown: lowercase (default) or uppercase.
   showLetter: function (letter) {
-    return Progress.settings().uppercase
-      ? String(letter).toLocaleUpperCase(CONFIG.language)
-      : String(letter).toLocaleLowerCase(CONFIG.language);
+    var text = String(letter);
+    var upper = Progress.settings().uppercase;
+    try {
+      return upper ? text.toLocaleUpperCase(languageTag()) : text.toLocaleLowerCase(languageTag());
+    } catch (error) {
+      // The language in config.js is not one the browser knows.
+      return upper ? text.toUpperCase() : text.toLowerCase();
+    }
   },
 
   // Stop pinch-zoom, long-press menus and double-tap zoom.
@@ -273,12 +324,15 @@ var Game = {
   },
 };
 
-// Is a color dark? (Then the title text gets a light style.)
+// Is a color dark? (Then text on it gets a light style.)
+// Works with any CSS color: "#2b2d6e", "#123", "navy", "rgb(0, 0, 80)".
 function isDark(color) {
-  var match = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(String(color).trim());
-  if (!match) return false;
-  var r = parseInt(match[1], 16), g = parseInt(match[2], 16), b = parseInt(match[3], 16);
-  return (0.299 * r + 0.587 * g + 0.114 * b) < 110;
+  var probe = make("span");
+  probe.style.color = color;
+  document.body.appendChild(probe);
+  var rgb = getComputedStyle(probe).color.match(/\d+(\.\d+)?/g) || [255, 255, 255];
+  probe.remove();
+  return (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) < 110;
 }
 
 // Go!

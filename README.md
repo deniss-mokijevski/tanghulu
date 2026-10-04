@@ -78,7 +78,7 @@ phone/tablet icon and choose "iPad", for example.
 1. Start the web server on your computer (see above).
 2. Find your computer's address on the home network:
    - **Mac:** System Settings → Wi-Fi → click **Details…** next to your network → look for **IP address** (something like `192.168.1.23`).
-   - **Windows:** in the black window, open a second one and type `ipconfig`. Look for **IPv4 Address**.
+   - **Windows:** open a second black window the same way (type `cmd` in the folder's address bar), type `ipconfig` and press Enter. Look for **IPv4 Address**.
 3. Make sure the tablet is on the **same Wi-Fi**.
 4. On the tablet, open **Safari** (iPad) or **Chrome** (Android) and type the address with `:8000` at the end, for example:
    ```
@@ -89,10 +89,12 @@ phone/tablet icon and choose "iPad", for example.
 
 **Make it feel like an app (fullscreen, no address bar):**
 
-- **iPad (Safari):** tap the Share button → **Add to Home Screen**.
-- **Android (Chrome):** tap ⋮ → **Add to Home screen** (or **Install app**).
-
-Then start it from the new icon on the home screen.
+- **iPad (Safari):** tap the Share button → **Add to Home Screen**, then always start the game
+  from that icon. Do this **before** she starts playing: the icon keeps its own progress,
+  separate from Safari tabs.
+- **Android (Chrome):** over home Wi-Fi (`http://192.168…`) Chrome can only add a normal
+  shortcut, which still opens with the address bar. For a real fullscreen app on Android, use
+  the online version (section 3) and tap ⋮ → **Install app** there.
 
 **Keep her inside the game (optional):**
 
@@ -101,9 +103,14 @@ Then start it from the new icon on the home screen.
 
 Notes:
 - Progress is saved **on the tablet**, in that browser. Your computer only serves the files.
+- Progress belongs to the **exact address**. If the address changes (for example `.23` becomes
+  `.24` after a router restart), the game opens fresh, as if she had never played. To avoid
+  this, give the computer a fixed address in your router (often called "DHCP reservation"),
+  or use the online version.
+- In Safari tabs, the iPad may delete a website's saved data after about a week without
+  visiting it. Games started from a Home Screen icon don't have this limit.
 - The computer must be on and the server running while she plays. If you want to play
   without the computer, put the game online (next section).
-- The address may change after a router restart. If it stops working, look it up again.
 
 ---
 
@@ -167,7 +174,8 @@ Ways to get a see-through PNG:
 - **Mac:** open the photo in **Preview** → Tools → **Remove Background**, then File → Export as PNG.
 
 Also good to know:
-- `.png`, `.jpg`, `.jpeg` and `.webp` all work. Keep each file under ~2 MB so the game loads fast.
+- `.png`, `.jpg` and `.jpeg` work everywhere; `.webp` needs iPadOS 14 or newer. Keep each file
+  under ~2 MB so the game loads fast.
 - To turn the paper removal off, set `cleanUpPaper: false` in `config.js`.
 - If you **replace** a drawing and still see the old one, the browser remembered it.
   Reload once more (on a computer: Ctrl+Shift+R / ⌘⇧R; on a tablet: close the tab and reopen it).
@@ -188,11 +196,15 @@ You can change:
 - Game rules: how many foods fit on a stick, how long until the 👆 hint, how often a review jar comes, etc.
 
 Keep the quotes and commas as they are. After saving, reload the game.
-If the screen stays empty after an edit, a comma or quote is probably missing. Undo your last change and try again.
+If the game shows a "config.js has a typo" message after an edit, a comma or quote is
+probably missing. Undo your last change and try again.
 
 **Adding a food:** copy a food line inside a level, give it a new `id` (this is also its
 file name), an `emoji`, a `word` and a `letter`. A place can have more or fewer than 4 foods.
+A food without a `letter` is simply on the shelf from the start.
 **Adding a place:** copy a whole level block `{ … },` and change it.
+The shelf fits about 16 foods with big buttons; with more foods the buttons get smaller.
+Keep at least one starter food, so she can make her first stick.
 
 ---
 
@@ -359,12 +371,19 @@ It shows:
 **The screen shows a turning tablet 📱↻**
 - Turn the tablet sideways. The game is made for landscape.
 
+**The buttons look small**
+- The game scales to the screen. Buttons are at least 80 px when the browser window is
+  about 900 × 560 or bigger. Close extra toolbars, use the Home Screen icon, or use the
+  online version for fullscreen.
+
 **The tablet can't open `http://192.168…`**
 - Is the server still running on the computer? Is the tablet on the same Wi-Fi (not a guest network)?
 - Allow Python through the firewall (Windows: "Allow access" when asked; Mac: System Settings → Network → Firewall).
 
-**Everything is gone after I cleared Safari's history**
-- Progress lives in the browser's storage. Clearing website data also clears the game's progress.
+**Her progress is gone**
+- Progress lives in the browser's storage for one exact address. Clearing website data, a
+  changed address (`.23` → `.24`), or switching between a Safari tab and the Home Screen icon
+  each start fresh. See the notes in section 2.
 
 ---
 

@@ -247,7 +247,7 @@ var Parent = {
         Progress.setSetting("voice", select.value);
         Sound.voiceName = select.value;
         Sound.voice = Sound.pickVoice();
-        Sound.speak([Sound.phrasePart("yay")]);
+        Sound.speak([Sound.phrasePart("yay")], true);
       });
       row.appendChild(select);
     }
@@ -255,7 +255,7 @@ var Parent = {
     test.type = "button";
     test.addEventListener("click", function () {
       Sound.unlock();
-      Sound.speak([Sound.phrasePart("welcome")]);
+      Sound.speak([Sound.phrasePart("welcome")], true);
     });
     row.appendChild(test);
     box.appendChild(row);

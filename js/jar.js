@@ -21,6 +21,7 @@ var Jar = {
     // Tapping the jar plays the sound again.
     onTap($("#jar"), function () {
       if (Game.screen !== "jar" || self.done) return;
+      clearTimeout(self.introTimer);
       replayClass($("#jar"), "shake", 500);
       Sound.speak([Sound.letterPart(self.current.food)]);
     });
@@ -51,6 +52,8 @@ var Jar = {
       button.type = "button";
       button.dataset.letter = letter;
       button.style.fontFamily = CONFIG.letterFont;
+      // Longer sounds like "ch" get smaller letters so they fit.
+      if (String(letter).length > 1) button.style.fontSize = Math.round(150 / String(letter).length) + "px";
       onTap(button, function () { self.tapLetter(letter, button); });
       row.appendChild(button);
     });
@@ -59,7 +62,9 @@ var Jar = {
     replayClass($("#jar"), "drop-in", 700);
     Sound.fx("whoosh");
     Hint.restart();
-    setTimeout(function () {
+    // Say the riddle once the jar has landed (unless she already tapped something).
+    clearTimeout(this.introTimer);
+    this.introTimer = setTimeout(function () {
       if (self.current === jar && !self.done) Sound.speak(self.instruction());
     }, 650);
   },
@@ -95,6 +100,7 @@ var Jar = {
 
   tapLetter: function (letter, button) {
     if (this.done || Game.screen !== "jar") return;
+    clearTimeout(this.introTimer);
     var food = this.current.food;
 
     if (letter === food.letter) {
@@ -149,6 +155,7 @@ var Jar = {
     // Save it, then fly the food to its place on the shelf.
     var from = Stage.where($("#jar-food"));
     if (!review) Progress.unlock(food.id);
+    if (this.current.counted) Levels.countJar(); // for the "every 3rd jar is a review" rule
     $("#jar-screen").classList.add("hidden");
     Shop.renderShelf(review ? null : food.id);
     var target = Shop.shelfButton(food.id);

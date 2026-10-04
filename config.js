@@ -37,9 +37,11 @@ var CONFIG = {
   // ---------------------------------------------------------------
   // TITLE SCREEN
   // ---------------------------------------------------------------
-  title: "Candy Stick Shop",
+  title: "Candy Stick Shop",       // (the name under a home-screen icon is in manifest.json,
+                                  //  or simply type it when you add the icon)
   artist: "Little Artist",        // her name or nickname, shown under the title
-  artBy: "Art by",                // the words before her name ("Art by Little Artist")
+  artBy: "Art by",                // the words before her name ("Art by Little Artist");
+                                  // use "" to show only her name
 
   // ---------------------------------------------------------------
   // LANGUAGE AND VOICE
@@ -57,14 +59,18 @@ var CONFIG = {
   // ---------------------------------------------------------------
   // GAME RULES (numbers you can tweak)
   // ---------------------------------------------------------------
-  maxOnStick: 5,                  // how many foods fit on one stick
+  maxOnStick: 5,                  // how many foods fit on one stick (1 to 5)
   idleHintSeconds: 5,             // show the pointing hand 👆 after this many quiet seconds
   reviewEvery: 3,                 // after level 1, every 3rd jar repeats a letter she already has
+                                  // (2 = every other jar, 0 = never; 1 also means never,
+                                  //  because then she would never get new foods)
   knownAfter: 3,                  // a letter counts as "known" after this many first-try answers in a row
   parentHoldSeconds: 3,           // hold the ⚙️ corner this long to open the parent screen
   cleanUpPaper: true,             // make white paper behind a drawing see-through (true / false)
   imageTypes: ["png", "jpg", "jpeg", "webp"],   // picture file types the game looks for
-  letterFont: "\"Andika\", \"Comic Sans MS\", \"Chalkboard SE\", \"Comic Neue\", \"Trebuchet MS\", sans-serif",
+  // Font for the big letters on the jar buttons. The tablet uses the first
+  // one it has. These are school-like fonts with a round "a" (casual = Android).
+  letterFont: "'Andika', 'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', casual, 'Trebuchet MS', sans-serif",
 
   // ---------------------------------------------------------------
   // THE CUSTOMER
@@ -74,6 +80,7 @@ var CONFIG = {
 
   // ---------------------------------------------------------------
   // FOODS SHE HAS FROM THE START (no letter riddle needed)
+  // Keep at least one, so she can make her first candy stick.
   //   id    = file name of the drawing and the recorded word
   //   emoji = placeholder until there is a drawing
   //   word  = what the voice says
@@ -95,12 +102,17 @@ var CONFIG = {
   //   icon        = small picture for the place (top of the screen)
   //   choices     = how many letter buttons the jar shows (2, 3 or 4)
   //   colors      = wall and floor colors used until there is a drawing
+  //                 (any CSS color, e.g. "#ffe7c4" or "lightblue")
   //   decorations = emojis placed around the room until there is a drawing
+  //                 (very new emojis can show as empty boxes on older tablets)
   //   foods       = the 4 foods of this place:
-  //                   letter = the sound it starts with (shown on the button)
+  //                   letter = the sound it starts with (shown on the button);
+  //                            a food without a letter is on the shelf from the start
   //                   sour: true = the bear puckers when eating it
   //
   // Wrong-answer letters are taken from this place and earlier places.
+  // The shelf fits about 16 foods at full size; more foods make the
+  // buttons smaller.
   // ---------------------------------------------------------------
   levels: [
     {
@@ -109,7 +121,7 @@ var CONFIG = {
       icon: "🍳",
       choices: 2,
       colors: { wall: "#ffe7c4", floor: "#e5a96f" },
-      decorations: ["🫖", "🥄", "🧁", "🪴", "🍳", "🧂"],
+      decorations: ["☕", "🥄", "🍰", "🍯", "🍳", "🥛"],
       foods: [
         { id: "strawberry", emoji: "🍓", word: "strawberry", letter: "s" },
         { id: "apple",      emoji: "🍎", word: "apple",      letter: "a" },
@@ -137,7 +149,7 @@ var CONFIG = {
       icon: "🚀",
       choices: 4,
       colors: { wall: "#2b2d6e", floor: "#5b4b9a" },
-      decorations: ["🪐", "🌙", "⭐", "🛸", "🚀", "☄️"],
+      decorations: ["🌍", "🌙", "⭐", "🛸", "🚀", "☄️"],
       foods: [
         { id: "watermelon", emoji: "🍉", word: "watermelon", letter: "w" },
         { id: "donut",      emoji: "🍩", word: "donut",      letter: "d" },
