@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Drawing sheets</title>
+  <style>
+    /* ---------- On screen: sheets of paper with a print button ---------- */
+    body {
+      margin: 0;
+      background: #f3e7ef;
+      color: #4a3530;
+      font-family: "Chalkboard SE", "Comic Sans MS", "Comic Neue", "Trebuchet MS", system-ui, sans-serif;
+    }
+    .emoji { font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    #controls {
+      max-width: 820px;
+      margin: 20px auto;
+      padding: 16px 22px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.5;
+    }
+    #controls h1 { margin: 0 0 6px; font-size: 24px; }
+    #controls label { display: inline-block; margin: 6px 18px 6px 0; }
+    #print-button {
+      min-height: 48px;
+      padding: 0 24px;
+      border: none;
+      border-radius: 24px;
+      background: #ff5d8f;
+      color: #fff;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .page {
+      box-sizing: border-box;
+      width: 196mm;
+      height: 255mm;
+      margin: 0 auto 24px;
+      padding: 6mm;
+      background: #fff;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      grid-gap: 6mm;
+    }
+    .cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow: hidden;
+    }
+    .cell.wide { grid-column: span 2; }
+    .label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 24mm;
+    }
+    .label .emoji { font-size: 15mm; line-height: 1; margin-right: 4mm; }
+    .label .word { font-size: 9mm; font-weight: bold; }
+    .file {
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: 3.2mm;
+      color: #9a8580;
+      margin-bottom: 2mm;
+    }
+    .box {
+      box-sizing: border-box;
+      width: 84mm;
+      height: 84mm;
+      border: 0.8mm solid #c9b8b3;
+      border-radius: 4mm;
+    }
+    .cell.wide .box { width: 150mm; height: 84mm; }
+
+    /* ---------- On paper ---------- */
+    @page { margin: 10mm; }
+    @media print {
+      body { background: #fff; }
+      #controls { display: none; }
+      .page {
+        margin: 0;
+        box-shadow: none;
+        page-break-after: always;
+        break-after: page;
+      }
+      .page:last-child { page-break-after: auto; break-after: auto; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="controls">
+    <h1>🖍️ Drawing sheets</h1>
+    <p>Print these pages. Each square is one drawing for the game — the picture and word above it show what to draw.
+       Afterwards, take a photo or scan of each drawing, crop it roughly to the square, and save it in the
+       game folder with the file name printed under the word (for example <b>assets/foods/strawberry.png</b>).
+       White paper around the drawing is removed automatically when the game runs from a web server (see README.md).</p>
+    <label><input type="checkbox" id="with-extras" checked> Also the customer and the backgrounds</label>
+    <label><input type="checkbox" id="only-missing"> Only pictures that are still missing</label>
+    <p><button id="print-button" type="button">🖨️ Print</button></p>
+  </div>
+
+  <div id="sheets"></div>
+
+  <!-- The foods and names come from the same settings file as the game -->
+  <script src="config.js"></script>
+  <script>
+    // Every picture to draw: foods first, then (optionally) the customer and the backgrounds.
+    function picturesToDraw(withExtras) {
+      var list = [];
+      var foods = CONFIG.starterFoods.slice();
+      CONFIG.levels.forEach(function (level) { foods = foods.concat(level.foods); });
+      foods.forEach(function (food) {
+        list.push({ emoji: food.emoji, word: food.word, file: "assets/foods/" + food.id + ".png", wide: false });
+      });
+      if (withExtras) {
+        var c = CONFIG.customer;
+        list.push({ emoji: c.emoji, word: c.word, file: "assets/characters/" + c.id + ".png", wide: false });
+        CONFIG.levels.forEach(function (level) {
+          list.push({ emoji: level.icon || "🖼️", word: level.id, file: "assets/backgrounds/" + level.id + ".png", wide: true });
+        });
+      }
+      return list;
+    }
+
+    // Does the picture already exist? (Tries the same file types as the game.)
+    function exists(file) {
+      var base = file.replace(/\.png$/, "");
+      var types = CONFIG.imageTypes || ["png"];
+      return types.reduce(function (chain, type) {
+        return chain.then(function (found) {
+          if (found) return true;
+          return new Promise(function (resolve) {
+            var img = new Image();
+            img.onload = function () { resolve(true); };
+            img.onerror = function () { resolve(false); };
+            img.src = base + "." + type;
+          });
+        });
+      }, Promise.resolve(false));
+    }
+
+    // Build the pages: 4 squares per page (a background takes 2 spaces).
+    async function build() {
+      var sheets = document.getElementById("sheets");
+      var withExtras = document.getElementById("with-extras").checked;
+      var onlyMissing = document.getElementById("only-missing").checked;
+      var items = picturesToDraw(withExtras);
+      if (onlyMissing) {
+        var keep = await Promise.all(items.map(function (item) { return exists(item.file); }));
+        items = items.filter(function (item, i) { return !keep[i]; });
+      }
+      sheets.innerHTML = "";
+      var page = null;
+      var used = 4;
+      items.forEach(function (item) {
+        var size = item.wide ? 2 : 1;
+        if (used + size > 4) {
+          page = document.createElement("div");
+          page.className = "page";
+          sheets.appendChild(page);
+          used = 0;
+        }
+        used += size;
+        var cell = document.createElement("div");
+        cell.className = "cell" + (item.wide ? " wide" : "");
+        cell.innerHTML =
+          '<div class="label"><span class="emoji"></span><span class="word"></span></div>' +
+          '<div class="file"></div><div class="box"></div>';
+        cell.querySelector(".emoji").textContent = item.emoji;
+        cell.querySelector(".word").textContent = item.word;
+        cell.querySelector(".file").textContent = item.file;
+        page.appendChild(cell);
+      });
+      if (items.length === 0) {
+        sheets.innerHTML = '<p style="text-align:center">Every picture already has a drawing. 🎉</p>';
+      }
+    }
+
+    document.getElementById("with-extras").addEventListener("change", build);
+    document.getElementById("only-missing").addEventListener("change", build);
+    document.getElementById("print-button").addEventListener("click", function () { window.print(); });
+    document.title = "Drawing sheets — " + CONFIG.title;
+    build();
+  </script>
+</body>
+</html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#ff8fb1">
+  <title>Candy Stick Shop</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- The room behind everything: her background drawing, or colors + emoji decorations -->
+  <div id="background">
+    <div id="room-wall"></div>
+    <div id="room-floor"></div>
+    <img id="background-drawing" class="hidden" alt="" draggable="false">
+    <span id="background-badge" class="badge"></span>
+  </div>
+
+  <!-- The game area (1000 × 640, scaled to fit the screen) -->
+  <div id="stage">
+
+    <!-- Emoji decorations of the room (hidden when there is a background drawing) -->
+    <div id="decorations"></div>
+
+    <!-- 1. TITLE SCREEN -->
+    <section id="title-screen" class="screen">
+      <h1 id="game-title">Candy Stick Shop</h1>
+      <div id="title-stick"></div>
+      <div id="title-customer"></div>
+      <button id="play-button" aria-label="Play"><span class="play-triangle"></span></button>
+      <p id="artist-line"></p>
+    </section>
+
+    <!-- 2. SHOP SCREEN -->
+    <section id="shop-screen" class="screen hidden">
+      <div id="level-bar">
+        <span id="level-icon"></span>
+        <div id="level-slots"></div>
+      </div>
+
+      <div id="shelf">
+        <div id="shelf-grid"></div>
+      </div>
+
+      <div id="counter"></div>
+
+      <!-- The pot is in two layers so the stick can dip "inside" it -->
+      <div id="pot-back">
+        <div id="syrup">
+          <span class="bubble"></span><span class="bubble"></span><span class="bubble"></span>
+        </div>
+      </div>
+
+      <!-- The stick. The "clip" hides the part of the stick that dips below the pot. -->
+      <div id="stick-clip">
+        <div id="stick-area">
+          <div id="stick">
+            <div id="stick-rod"></div>
+            <div id="stick-foods"></div>
+          </div>
+        </div>
+      </div>
+      <div id="stick-holder"></div>
+
+      <div id="pot-front"><span class="pot-handle left"></span><span class="pot-handle right"></span></div>
+      <div id="pot-button" aria-label="Pot of syrup"></div>
+
+      <div id="customer">
+        <div id="customer-body"></div>
+      </div>
+    </section>
+
+    <!-- 3. THE LETTER JAR (shows on top of the shop) -->
+    <section id="jar-screen" class="hidden">
+      <div id="jar-backdrop"></div>
+      <div id="jar">
+        <div id="jar-lid"><span id="jar-lock">🔒</span></div>
+        <div id="jar-glass">
+          <div id="jar-food"></div>
+          <div id="jar-gleam"></div>
+        </div>
+      </div>
+      <div id="letter-buttons"></div>
+    </section>
+
+    <!-- 🔊 says the current instruction again -->
+    <button id="repeat-button" class="hidden" aria-label="Say it again">🔊</button>
+
+    <!-- Flying sugar, hearts, sparkles… -->
+    <div id="fx-layer"></div>
+
+    <!-- The pointing hand that shows what to tap -->
+    <div id="hint-hand" class="hidden">👆</div>
+  </div>
+
+  <!-- Hold for 3 seconds to open the parent screen -->
+  <div id="parent-corner" aria-label="Parent settings (hold)">
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <circle class="ring-track" cx="32" cy="32" r="28"></circle>
+      <circle id="parent-ring" cx="32" cy="32" r="28"></circle>
+    </svg>
+    <span>⚙️</span>
+  </div>
+
+  <!-- 4. PARENT SCREEN (for grown-ups) -->
+  <section id="parent-screen" class="hidden">
+    <div id="parent-panel">
+      <header id="parent-header">
+        <h2>Parent corner</h2>
+        <button id="parent-close" type="button">✕ Close</button>
+      </header>
+      <div id="parent-content"></div>
+    </div>
+  </section>
+
+  <!-- Shown when the tablet is held upright: "please turn me" -->
+  <div id="turn-notice" aria-label="Please turn the tablet sideways">
+    <span class="turn-phone">📱</span>
+    <span class="turn-arrow">↻</span>
+  </div>
+
+  <!-- The settings first, then the game code -->
+  <script src="config.js"></script>
+  <script src="js/util.js"></script>
+  <script src="js/assets.js"></script>
+  <script src="js/synth.js"></script>
+  <script src="js/sound.js"></script>
+  <script src="js/progress.js"></script>
+  <script src="js/levels.js"></script>
+  <script src="js/effects.js"></script>
+  <script src="js/hint.js"></script>
+  <script src="js/shop.js"></script>
+  <script src="js/jar.js"></script>
+  <script src="js/parent.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
