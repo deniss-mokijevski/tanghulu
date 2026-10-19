@@ -1046,3 +1046,286 @@ body.dark-floor #artist-line { color: #fff; }   /* the artist line sits on the f
   align-items: center;
 }
 #title-foods .coat { opacity: 1; transform: scale(1); }
+
+/* =====================================================================
+   FEATURES FROM THE ORIGINAL TANGHULU
+   ===================================================================== */
+
+/* ---------- Cooking the syrup: cold → bubbling → golden ---------- */
+#pot-back[data-syrup="cold"] #syrup {
+  background: radial-gradient(ellipse at 40% 35%, #fffaf0, #fff0cc 60%, #f3dca2);
+}
+#pot-back[data-syrup="cold"] .bubble { display: none; }
+#pot-back[data-syrup="warm"] #syrup {
+  background: radial-gradient(ellipse at 40% 35%, #fff2b8, #ffd76a 55%, #f0b544);
+}
+#pot-back[data-syrup="warm"] .bubble { width: 22px; height: 22px; animation-duration: 1.5s; }
+#pot-back[data-syrup="ready"] #syrup {
+  box-shadow: 0 0 22px 8px rgba(255, 196, 70, 0.75);
+  animation: syrup-glow 1.2s ease-in-out infinite alternate;
+}
+#pot-back[data-syrup="ready"] .bubble { width: 8px; height: 8px; animation-duration: 0.6s; }
+@keyframes syrup-glow {
+  from { filter: brightness(1); }
+  to { filter: brightness(1.15); }
+}
+#pot-fire {
+  position: absolute;
+  left: 652px;
+  top: 572px;
+  width: 152px;
+  height: 50px;
+  display: flex;
+  justify-content: space-around;
+  font-family: var(--emoji-font);
+  font-size: 38px;
+  line-height: 50px;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0;
+  transform: scaleY(0.2);
+  transform-origin: 50% 100%;
+  transition: opacity 0.3s, transform 0.3s;
+}
+#pot-fire.on { opacity: 1; transform: scaleY(1); }
+#pot-fire.on span { display: inline-block; animation: flicker 0.45s ease-in-out infinite alternate; }
+#pot-fire.on span:nth-child(2) { animation-delay: 0.15s; }
+#pot-fire.on span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes flicker {
+  from { transform: scale(0.88, 0.95) rotate(-5deg); }
+  to { transform: scale(1.08, 1.12) rotate(5deg); }
+}
+
+/* ---------- The sugar wing (糖风) on the tip of the stick ---------- */
+.sugar-wing {
+  position: relative;
+  flex: none;
+  width: 96px;
+  height: 42px;
+  cursor: pointer;
+  animation: pop-in 0.45s ease-out;
+}
+.sugar-wing::before {                 /* a bigger area for small fingers */
+  content: "";
+  position: absolute;
+  left: -14px;
+  right: -14px;
+  top: -24px;
+  bottom: -22px;
+}
+.wing-glass {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  top: 2px;
+  bottom: 0;
+  -webkit-clip-path: polygon(50% 100%, 6% 34%, 20% 0, 36% 24%, 50% 2%, 64% 22%, 80% 0, 95% 36%);
+  clip-path: polygon(50% 100%, 6% 34%, 20% 0, 36% 24%, 50% 2%, 64% 22%, 80% 0, 95% 36%);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.95), rgba(255, 210, 120, 0.6) 45%, rgba(255, 172, 40, 0.4));
+  animation: wing-shine 1.6s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+@keyframes wing-shine {
+  from { filter: brightness(1); }
+  to { filter: brightness(1.25); }
+}
+.wing-flyer .wing-glass { left: 0; right: 0; top: 20%; bottom: 20%; }
+.fx-glass {
+  border-radius: 2px;
+  background: rgba(225, 242, 255, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.9);
+  -webkit-clip-path: polygon(0 0, 100% 30%, 60% 100%);
+  clip-path: polygon(0 0, 100% 30%, 60% 100%);
+}
+
+/* ---------- The bear's wish bubble ---------- */
+#wish-bubble {
+  position: absolute;
+  left: 768px;
+  top: 2px;
+  width: 132px;
+  height: 104px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.1), 0 0 0 4px rgba(255, 255, 255, 0.6);
+  z-index: 6;
+  cursor: pointer;
+}
+#wish-bubble.pop-in { animation: pop-in 0.6s ease-out; }
+#wish-bubble.wiggle { animation: wiggle 0.5s ease-in-out; }
+.wish-dot {                           /* little circles towards the bear's head */
+  position: absolute;
+  left: 22px;
+  bottom: -20px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.08);
+}
+.wish-dot.small { left: 6px; bottom: -38px; width: 12px; height: 12px; }
+.wish-food {
+  position: absolute;
+  left: 28px;
+  top: 14px;
+  width: 76px;
+  height: 76px;
+  font-size: 58px;
+  pointer-events: none;
+}
+#wish-bubble.granted::after {         /* ✓: the wish is on the stick */
+  content: "✓";
+  position: absolute;
+  right: -6px;
+  top: -6px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #4cc97a;
+  color: #fff;
+  font: bold 26px/36px var(--round-font);
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+/* ---------- The straw pole (草把子) button in the shop ---------- */
+#pole-button {
+  position: absolute;
+  left: 868px;
+  top: 404px;
+  width: 124px;
+  height: 156px;
+  z-index: 4;
+}
+#pole-button.wiggle { animation: wiggle 0.5s ease-in-out; }
+#pole-button .mini-rod {
+  position: absolute;
+  left: 56px;
+  top: 70px;
+  width: 12px;
+  height: 86px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #c99256, #8f5a2a);
+}
+#pole-button .mini-straw {
+  position: absolute;
+  left: 22px;
+  top: 6px;
+  width: 80px;
+  height: 96px;
+  border-radius: 46% 46% 42% 42%;
+  background: repeating-linear-gradient(100deg, #f0d184 0, #f0d184 5px, #d9ad4f 5px, #d9ad4f 8px, #f6dd9a 8px, #f6dd9a 12px);
+  box-shadow: inset -6px -8px 0 rgba(150, 100, 30, 0.25), 0 4px 0 rgba(0, 0, 0, 0.12);
+}
+#mini-balls {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 124px;
+  height: 156px;
+  pointer-events: none;
+}
+.mini-ball {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff 0 12%, #ff6b6b 30%, #c62f2f);
+  box-shadow: 0 0 0 2px rgba(255, 200, 100, 0.7);
+}
+
+/* ---------- The straw pole screen ---------- */
+#pole-screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1000px;
+  height: 640px;
+  z-index: 20;
+}
+#pole-backdrop {
+  position: absolute;
+  top: -400px; left: -600px; right: -600px; bottom: -400px;
+  background: rgba(70, 40, 20, 0.5);
+  animation: fade-in 0.3s ease-out;
+}
+#pole-rod {
+  position: absolute;
+  left: 488px;
+  top: 330px;
+  width: 24px;
+  height: 420px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #d9a465, #8f5a2a);
+}
+.pole-rod-stick {
+  position: absolute;
+  height: 10px;
+  margin-top: -5px;
+  border-radius: 5px;
+  background: linear-gradient(#e8c48f, #c99256);
+  transform-origin: 0 50%;
+}
+#pole-straw {
+  position: absolute;
+  left: 392px;
+  top: 196px;
+  width: 216px;
+  height: 250px;
+  border-radius: 46% 46% 42% 42%;
+  background: repeating-linear-gradient(100deg, #f0d184 0, #f0d184 7px, #d9ad4f 7px, #d9ad4f 11px, #f6dd9a 11px, #f6dd9a 17px);
+  box-shadow: inset -14px -18px 0 rgba(150, 100, 30, 0.25), 0 10px 20px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+.pole-food {
+  position: absolute;
+  width: 104px;
+  height: 104px;
+  margin: -52px 0 0 -52px;
+  border-radius: 50%;
+  font-size: 62px;
+  z-index: 2;
+}
+.pole-food .stick-food { position: absolute; left: 4px; top: 13px; }
+.pole-food .coat { opacity: 1; transform: scale(1); }
+.pole-food.wiggle { animation: wiggle 0.5s ease-in-out; }
+.pole-flag {
+  position: absolute;
+  right: -10px;
+  top: -10px;
+  min-width: 46px;
+  height: 46px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  border-radius: 23px;
+  background: #fff;
+  color: #4a3b8f;
+  font-size: 34px;
+  line-height: 46px;
+  text-align: center;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+.pole-flag.flag-glow { animation: flag-glow 0.9s ease-out; }
+@keyframes flag-glow {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 220, 80, 0.9); }
+  40% { transform: scale(1.35); box-shadow: 0 0 22px 10px rgba(255, 220, 80, 0.9); }
+  100% { transform: scale(1); box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25); }
+}
+#pole-close {
+  position: absolute;
+  left: 872px;
+  top: 522px;
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.18);
+  font: bold 56px/104px var(--round-font);
+  color: var(--pink-dark);
+  text-align: center;
+  z-index: 3;
+}
+#pole-close:active { transform: translateY(4px); }

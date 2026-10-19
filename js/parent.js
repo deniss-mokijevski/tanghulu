@@ -225,13 +225,14 @@ var Parent = {
     }
     box.appendChild(row);
 
-    // Browser voice (used for everything that has no recording)
+    // The tablet's own voice (only used for words that have neither a
+    // recording nor a built-in clip, and only if it speaks the language)
     row = make("div", "parent-row");
-    row.appendChild(make("label", null, "Voice"));
+    row.appendChild(make("label", null, "Tablet voice"));
     var voices = Sound.voicesForLanguage();
     if (voices.length === 0) {
-      row.appendChild(make("span", "note", "No built-in voice found for \"" + CONFIG.language +
-        "\" on this device. Recordings still work."));
+      row.appendChild(make("span", "note", "This device has no voice for \"" + CONFIG.language +
+        "\" (normal on iPads for Estonian). That's fine: the game uses its built-in voice and your recordings."));
     } else {
       var select = make("select");
       var auto = make("option", null, "Automatic (" + voices[0].name + ")");
@@ -247,7 +248,7 @@ var Parent = {
         Progress.setSetting("voice", select.value);
         Sound.voiceName = select.value;
         Sound.voice = Sound.pickVoice();
-        Sound.speak([Sound.phrasePart("yay")], true);
+        Sound.speakText(CONFIG.phrases.yay || "").then(function (playing) { return playing.promise; });
       });
       row.appendChild(select);
     }
@@ -259,23 +260,63 @@ var Parent = {
     });
     row.appendChild(test);
     box.appendChild(row);
-    box.appendChild(make("p", "note",
-      "iPad tip: nicer voices can be downloaded in Settings → Accessibility → Spoken Content → Voices. " +
-      "Android: Settings → Text-to-speech."));
+    if (window.BUILTIN_VOICE && CONFIG.builtinVoice) {
+      box.appendChild(make("p", "note", "Built-in voice: " + BUILTIN_VOICE.credit));
+    }
 
-    // Which recordings were found
-    var names = Object.keys(Sound.clips).filter(function (name) { return name.indexOf("music/") !== 0; });
-    var found = names.filter(function (name) { return Sound.found[name]; });
-    box.appendChild(make("p", null, "Recordings found: " + found.length + " of " + names.length +
-      ". Everything without a recording uses the browser voice or built-in effects."));
-    var details = make("details");
-    details.appendChild(make("summary", null, "Show missing recordings"));
-    var list = make("ul", "missing-list");
-    names.filter(function (name) { return !Sound.found[name]; }).forEach(function (name) {
-      list.appendChild(make("li", null, "assets/" + name + ".mp3"));
+    // Where every spoken line comes from.
+    var lines = Sound.allParts();
+    var counts = { recording: 0, builtin: 0, tablet: 0, silent: 0 };
+    var silent = [];
+    var checks = lines.map(function (part) {
+      if (Sound.found[part.file]) return Promise.resolve("recording");
+      return Sound.builtin(part).then(function (clip) {
+        if (clip) return "builtin";
+        return voices.length ? "tablet" : "silent";
+      });
     });
+    var summary = make("p", null, "Checking the spoken lines…");
+    box.appendChild(summary);
+    var details = make("details");
+    details.appendChild(make("summary", null, "Lines that need a recording"));
+    var list = make("ul", "missing-list");
     details.appendChild(list);
     box.appendChild(details);
+    Promise.all(checks).then(function (sources) {
+      sources.forEach(function (source, i) {
+        counts[source]++;
+        if (source === "silent") silent.push(lines[i]);
+      });
+      summary.textContent = "Spoken lines: " + counts.recording + " your recordings, " +
+        counts.builtin + " built-in voice, " + counts.tablet + " tablet voice, " +
+        counts.silent + " silent (no voice at all).";
+      if (silent.length === 0) {
+        list.appendChild(make("li", null, "None — every line can be heard. 🎉"));
+      }
+      silent.forEach(function (part) {
+        list.appendChild(make("li", null, "assets/" + part.file + ".mp3 — \"" + part.text + "\""));
+      });
+    });
+
+    // Letter sounds (only recordings can say a sound like "sss")
+    var letters = [];
+    CONFIG.levels.forEach(function (level) {
+      level.foods.forEach(function (food) {
+        if (food.letter && letters.indexOf(food.letter) === -1) letters.push(food.letter);
+      });
+    });
+    var recorded = letters.filter(function (letter) { return Sound.found["sounds/letters/" + letter]; });
+    box.appendChild(make("p", null, "Letter sounds recorded: " + recorded.length + " of " + letters.length +
+      (recorded.length < letters.length
+        ? ". Until a letter's sound is recorded, its jar asks for the first letter of the word instead (\"" +
+          (CONFIG.phrases.jarWord || "") + "\")."
+        : ".")));
+    var missingLetters = letters.filter(function (letter) { return recorded.indexOf(letter) === -1; });
+    if (missingLetters.length) {
+      box.appendChild(make("p", "note", "Still to record: " + missingLetters.map(function (letter) {
+        return "assets/sounds/letters/" + letter + ".mp3";
+      }).join(", ") + ". See the checklist in README.md."));
+    }
   },
 
   // 4. lowercase / UPPERCASE letters.

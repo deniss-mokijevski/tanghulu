@@ -1,6 +1,6 @@
 {
-  "name": "Candy Stick Shop",
-  "short_name": "Candy Shop",
+  "name": "Kommipulgapood",
+  "short_name": "Kommipood",
   "start_url": "./index.html",
   "scope": "./",
   "display": "fullscreen",

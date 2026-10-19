@@ -63,6 +63,26 @@ var Effects = {
     }
   },
 
+  // Clear, glassy pieces of the hard sugar shell (with a little glitter).
+  glass: function (x, y) {
+    for (var i = 0; i < 10; i++) {
+      var piece = make("div", "fx-glass");
+      var size = randomBetween(10, 22);
+      piece.style.width = size + "px";
+      piece.style.height = size * randomBetween(0.5, 1) + "px";
+      var angle = randomBetween(-Math.PI * 0.95, -Math.PI * 0.05);
+      var speed = randomBetween(220, 480);
+      this.throwPiece(piece, x, y, Math.cos(angle) * speed, Math.sin(angle) * speed,
+        randomBetween(-720, 720), randomBetween(650, 950));
+    }
+    for (var j = 0; j < 3; j++) {
+      var glint = make("div", "fx-emoji", "✨");
+      glint.style.fontSize = randomBetween(18, 30) + "px";
+      this.throwPiece(glint, x + randomBetween(-20, 20), y, randomBetween(-150, 150),
+        randomBetween(-420, -250), randomBetween(-90, 90), 800);
+    }
+  },
+
   // Emoji that float up and fade (hearts, sour drops…).
   floatUp: function (x, y, emojis, count) {
     for (var i = 0; i < count; i++) {

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="et">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -7,7 +7,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#ff8fb1">
-  <title>Candy Stick Shop</title>
+  <title>Kommipulgapood</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon-180.png">
@@ -31,7 +31,7 @@
 
     <!-- 1. TITLE SCREEN -->
     <section id="title-screen" class="screen">
-      <h1 id="game-title">Candy Stick Shop</h1>
+      <h1 id="game-title">Kommipulgapood</h1>
       <div id="title-stick"></div>
       <div id="title-customer"></div>
       <button id="play-button" aria-label="Play"><span class="play-triangle"></span></button>
@@ -70,11 +70,23 @@
       <div id="stick-holder"></div>
 
       <div id="pot-front"><span class="pot-handle left"></span><span class="pot-handle right"></span></div>
+      <!-- Fire under the pot: the sugar melts and turns golden -->
+      <div id="pot-fire"><span>🔥</span><span>🔥</span><span>🔥</span></div>
       <div id="pot-button" aria-label="Pot of syrup"></div>
 
       <div id="customer">
         <div id="customer-body"></div>
       </div>
+
+      <!-- The bear's wish: a picture of the food it would like -->
+      <div id="wish-bubble" class="hidden" aria-label="The bear's wish"></div>
+
+      <!-- The street seller's straw pole: every won candy stick, to listen to again -->
+      <button id="pole-button" class="hidden" type="button" aria-label="Straw pole">
+        <span class="mini-rod"></span>
+        <span class="mini-straw"></span>
+        <span id="mini-balls"></span>
+      </button>
     </section>
 
     <!-- 3. THE LETTER JAR (shows on top of the shop) -->
@@ -88,6 +100,15 @@
         </div>
       </div>
       <div id="letter-buttons"></div>
+    </section>
+
+    <!-- 4. THE STRAW POLE (all won candy sticks; tap one to hear its letter) -->
+    <section id="pole-screen" class="hidden">
+      <div id="pole-backdrop"></div>
+      <div id="pole-rod"></div>
+      <div id="pole-sticks"></div>
+      <div id="pole-straw"></div>
+      <button id="pole-close" type="button" aria-label="Back to the shop">✕</button>
     </section>
 
     <!-- 🔊 says the current instruction again -->
@@ -128,6 +149,7 @@
 
   <!-- The settings first, then the game code -->
   <script src="config.js"></script>
+  <script src="assets/sounds/builtin/voice-index.js"></script>
   <script src="js/util.js"></script>
   <script src="js/assets.js"></script>
   <script src="js/synth.js"></script>
@@ -138,6 +160,7 @@
   <script src="js/hint.js"></script>
   <script src="js/shop.js"></script>
   <script src="js/jar.js"></script>
+  <script src="js/pole.js"></script>
   <script src="js/parent.js"></script>
   <script src="js/main.js"></script>
 </body>

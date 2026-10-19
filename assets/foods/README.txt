@@ -1,10 +1,10 @@
 Put her food drawings here.
 
-The file name must be the food's "id" from config.js, in lowercase:
-  cherry.png  grape.png  orange.png
-  strawberry.png  apple.png  tomato.png  peach.png
-  mango.png  banana.png  kiwi.png  lemon.png
-  watermelon.png  donut.png  hotdog.png  nuts.png
+The file name must be the food's "id" from config.js (plain English letters, lowercase):
+  hawthorn.png (viirpuumari)  cherry.png (kirss)  grape.png (viinamari)  mandarin.png (mandariin)
+  watermelon.png (arbuus)  strawberry.png (maasikas)  lemon.png (sidrun)  bread.png (leib)
+  apple.png (õun)  peach.png (virsik)  icecream.png (jäätis)  noodles.png (nuudlid)
+  hotdog.png (hot dog)  kiwi.png (kiivi)  pear.png (pirn)  tomato.png (tomat)
 
 .png is best (see-through background). .jpg and .jpeg also work;
 .webp needs iPadOS 14 or newer.

@@ -2,9 +2,14 @@
    shop.js — the candy stick shop.
 
    1. Tap a food  → it jumps onto the stick (up to 5, repeats allowed)
-   2. Tap the pot → the stick dips into syrup and comes out glossy
-   3. Tap the stick → the bear bites the top food (crunch!)
-   4. Empty stick → a little party, then a letter jar appears
+   2. Tap the pot → the fire melts the sugar: it bubbles and turns
+                    golden (like the real tanghulu sellers' copper pot),
+                    then the stick dips in and comes out glossy
+   3. A thin sugar "wing" forms on the tip. Tap it: snap! (just for fun)
+   4. Tap the stick → the bear bites the top food (crack! crunch!)
+   5. Empty stick → a little party, then a letter jar appears
+   The bear also wishes for one food (a picture in a bubble). Putting it
+   on the stick makes the bear extra happy, but every stick is fine.
    ===================================================================== */
 
 var Shop = {
@@ -12,12 +17,16 @@ var Shop = {
   coated: false,  // has the stick been dipped in syrup?
   eating: false,  // has the bear started eating this stick?
   landing: [],    // foods still flying onto the stick
+  syrup: 0,       // how far the sugar has cooked (0 = cold)
+  wish: null,     // the food the bear would like (or null)
+  wishMet: false, // has the bear eaten its wish this round?
 
   init: function () {
     var self = this;
     onTap($("#pot-button"), function () { self.tapPot(); });
     onTap($("#stick-area"), function () { self.tapStick(); });
     onTap($("#customer"), function () { self.tapCustomer(); });
+    onTap($("#wish-bubble"), function () { self.tapWish(); });
   },
 
   // Show the shop (called when she presses ▶ and after each jar).
@@ -25,6 +34,8 @@ var Shop = {
     this.renderShelf();
     this.renderCustomer();
     this.renderStick();
+    this.renderPot();
+    this.newWish();
   },
 
   /* -------------------------------------------------------------------
@@ -97,6 +108,12 @@ var Shop = {
     body.className = "idle";
   },
 
+  // The food at the top of the stick (the next one the bear eats).
+  topPiece: function () {
+    var pieces = document.querySelectorAll("#stick-foods .stick-food");
+    return pieces[pieces.length - 1] || null;
+  },
+
   // Draw the foods on the stick (used when the shop opens).
   renderStick: function () {
     var box = $("#stick-foods");
@@ -141,6 +158,11 @@ var Shop = {
     this.stick.push(food);
     Game.step++;
     Sound.fx("pop");
+    if (this.wish && food.id === this.wish.id) {
+      // The food the bear wished for is on the stick: the bubble nods.
+      $("#wish-bubble").classList.add("granted");
+      replayClass($("#wish-bubble"), "wiggle", 500);
+    }
 
     // Say the food's name ("cherry!"). When the stick becomes full,
     // also say what to do next.
@@ -170,12 +192,32 @@ var Shop = {
   },
 
   /* -------------------------------------------------------------------
-     Tapping the pot: dip the stick in syrup
+     Tapping the pot: melt the sugar, then dip the stick in the syrup
+     (config.js potTaps: 3 = two taps to cook, the third one dips)
      ------------------------------------------------------------------- */
+  cookSteps: function () {
+    return Math.max(0, Math.round(CONFIG.potTaps || 1) - 1);
+  },
+
+  syrupReady: function () {
+    return this.syrup >= this.cookSteps();
+  },
+
+  // Show how far the syrup has cooked: cold → bubbling → golden.
+  renderPot: function () {
+    var state = this.syrupReady() ? "ready" : (this.syrup > 0 ? "warm" : "cold");
+    $("#pot-back").setAttribute("data-syrup", state);
+    $("#pot-fire").classList.toggle("on", this.syrup > 0 || this.cookSteps() === 0);
+  },
+
   tapPot: function () {
     if (Game.busy || Game.screen !== "shop") return;
+    if (!this.syrupReady()) {
+      this.cook();
+      return;
+    }
     if (this.stick.length === 0) {
-      // Nothing to dip yet.
+      // The syrup is ready, but there is nothing to dip yet.
       replayClass($("#pot-front"), "wiggle", 500);
       replayClass($("#syrup"), "splash", 500);
       Sound.fx("boing");
@@ -183,6 +225,23 @@ var Shop = {
       return;
     }
     this.dip();
+  },
+
+  // One tap of cooking: more heat, smaller bubbles, a more golden color.
+  cook: function () {
+    this.syrup++;
+    Game.step++;
+    this.renderPot();
+    Sound.fx("bubble");
+    replayClass($("#syrup"), "splash", 500);
+    if (this.syrupReady()) {
+      Sound.fx("pling");
+      var potAt = Stage.where($("#syrup"));
+      Effects.sparkles(potAt.x, potAt.y, 8);
+      Game.say(this.stick.length ? "syrupReady" : "tapFood");
+    } else {
+      Game.say("cook");
+    }
   },
 
   dip: async function () {
@@ -248,11 +307,53 @@ var Shop = {
     }
     replayClass(stick, "shining", 1400);
     Sound.fx("shine");
+    this.addWing();
     await wait(450);
 
     Game.busy = false;
     Game.step++;
     Game.say("tapStick");
+  },
+
+  /* -------------------------------------------------------------------
+     The sugar wing (糖风): a thin sheet of sugar on the tip of the stick,
+     like the real sellers make on their stone slab. Tap it: snap!
+     ------------------------------------------------------------------- */
+  addWing: function () {
+    this.removeWing();
+    var self = this;
+    var wing = make("div", "sugar-wing");
+    wing.appendChild(make("span", "wing-glass"));
+    onTap(wing, function (event) {
+      event.stopPropagation(); // it's on the stick, but it is not a bite
+      self.snapWing(wing);
+    });
+    $("#stick-foods").appendChild(wing); // it sits on top of the top food
+  },
+
+  removeWing: function () {
+    var wing = $("#stick-foods .sugar-wing");
+    if (wing) wing.remove();
+    return wing;
+  },
+
+  snapWing: async function (wing) {
+    if (Game.busy || Game.screen !== "shop" || !wing.parentNode) return;
+    Game.busy = true;
+    Hint.hide();
+    var at = Stage.where(wing);
+    Sound.fx("snap");
+    Effects.glass(at.x, at.y);
+    wing.remove();
+    // The little piece of sugar flies to the bear: a tiny treat.
+    var flyer = make("div", "wing-flyer");
+    flyer.appendChild(make("span", "wing-glass"));
+    var bearAt = Stage.where($("#customer"));
+    await Effects.fly(flyer, at, { x: bearAt.x - 20, y: bearAt.y - 10, scale: 0.6 }, 650, 80);
+    Sound.fx("crunch");
+    replayClass($("#customer-body"), "chomp", 300);
+    Effects.floatUp(bearAt.x, bearAt.y - 110, ["✨", "💛"], 4);
+    Game.busy = false;
   },
 
   /* -------------------------------------------------------------------
@@ -293,7 +394,7 @@ var Shop = {
     Hint.hide();
     this.eating = true;
     var food = this.stick[this.stick.length - 1];
-    var piece = $("#stick-foods").lastElementChild;
+    var piece = this.topPiece();
     var foodAt = Stage.where(piece);
     var customer = $("#customer");
     var body = $("#customer-body");
@@ -312,9 +413,13 @@ var Shop = {
     }
     await wait(250);
 
-    // …CRUNCH!
+    // …CRACK! CRUNCH! (the glassy sugar shell breaks)
+    Sound.fx("crack");
     Sound.fx("crunch");
     Effects.sugar(foodAt.x, foodAt.y);
+    Effects.glass(foodAt.x, foodAt.y);
+    var wing = this.removeWing(); // the sugar wing breaks off with the first bite
+    if (wing) Effects.glass(foodAt.x, foodAt.y - 40);
     piece.classList.add("eaten");
     this.stick.pop();
     Game.step++;
@@ -333,6 +438,20 @@ var Shop = {
       await wait(150);
     }
 
+    // The food the bear wished for: extra happy!
+    if (this.wish && food.id === this.wish.id && !this.wishMet) {
+      this.wishMet = true;
+      var bubble = $("#wish-bubble");
+      var bubbleAt = Stage.where(bubble);
+      Effects.sparkles(bubbleAt.x, bubbleAt.y, 12);
+      Effects.hearts(bearAt.x, bearAt.y - 110);
+      Sound.fx("star");
+      replayClass(body, "happy", 800);
+      bubble.classList.add("hidden");
+      var thanks = Sound.speak([Sound.phrasePart("wishYes")]);
+      if (this.stick.length === 0) await Promise.race([thanks, wait(3000)]);
+    }
+
     if (this.stick.length === 0) {
       await this.celebrate();
     } else {
@@ -346,6 +465,9 @@ var Shop = {
     this.coated = false;
     this.eating = false;
     $("#stick").classList.remove("coated");
+    this.syrup = 0;          // the fire goes out; next stick, the sugar melts again
+    this.renderPot();
+    $("#wish-bubble").classList.add("hidden");
     var bearAt = Stage.where($("#customer"));
     await wait(200);
     Sound.fx("cheer");
@@ -357,5 +479,45 @@ var Shop = {
     Game.busy = false;
     Game.step++;
     Game.afterStick();
+  },
+
+  /* -------------------------------------------------------------------
+     The bear's wish: one food in a thought bubble
+     ------------------------------------------------------------------- */
+  newWish: function () {
+    this.wishMet = false;
+    var bubble = $("#wish-bubble");
+    bubble.innerHTML = "";
+    bubble.classList.remove("granted");
+    var foods = allFoods().filter(function (food) { return Progress.isUnlocked(food.id); });
+    if (!CONFIG.bearWishes || foods.length === 0) {
+      this.wish = null;
+      bubble.classList.add("hidden");
+      return;
+    }
+    // Not the same food twice in a row.
+    var last = this.wish;
+    var choices = foods.filter(function (food) { return !last || food.id !== last.id; });
+    this.wish = randomItem(choices.length ? choices : foods);
+    bubble.appendChild(make("span", "wish-dot small"));
+    bubble.appendChild(make("span", "wish-dot"));
+    var picture = make("div", "wish-food");
+    picture.appendChild(Assets.picture("foods", this.wish, { framed: false }));
+    bubble.appendChild(picture);
+    bubble.classList.remove("hidden");
+    replayClass(bubble, "pop-in", 700);
+  },
+
+  // What the bear says: "maasikas, palun!"
+  wishParts: function () {
+    if (!this.wish || this.wishMet) return [];
+    return [Sound.wordPart(this.wish), Sound.phrasePart("please")];
+  },
+
+  // Tapping the bubble: the bear says its wish again.
+  tapWish: function () {
+    if (Game.screen !== "shop" || !this.wish) return;
+    replayClass($("#wish-bubble"), "wiggle", 500);
+    Sound.speak(this.wishParts());
   },
 };

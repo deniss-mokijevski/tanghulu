@@ -3,8 +3,10 @@
 
    After every finished stick a locked jar appears. Inside is a food,
    shown as a dark outline. The game plays a letter sound and shows
-   big letter buttons.
-     • Right letter → the jar pops open, the voice says "sss… strawberry!",
+   big letter buttons. (Until the letter sounds are recorded, it says
+   the word and asks for its first letter: "Millise tähega algab see
+   sõna? … sidrun".)
+     • Right letter → the jar pops open, the voice says "sss… sidrun!",
                       and the food flies onto the shelf.
      • Wrong letter → that letter says its own sound and wiggles, the
                       right one glows softly, and she tries again.
@@ -23,7 +25,7 @@ var Jar = {
       if (Game.screen !== "jar" || self.done) return;
       clearTimeout(self.introTimer);
       replayClass($("#jar"), "shake", 500);
-      Sound.speak([Sound.letterPart(self.current.food)]);
+      Sound.speak([self.soundOf(self.current.food)]);
     });
   },
 
@@ -69,11 +71,22 @@ var Jar = {
     }, 650);
   },
 
-  // What the 🔊 button says: "Which letter makes this sound? … sss"
+  // What the 🔊 button says: "Milline täht nii kõlab? … sss", or without a
+  // letter recording: "Millise tähega algab see sõna? … sidrun".
   instruction: function () {
     if (!this.current || this.done) return [];
-    var key = this.current.review ? "review" : "jar";
-    return [Sound.phrasePart(key), Sound.letterPart(this.current.food)];
+    var food = this.current.food;
+    var letterSound = Sound.letterSound(food);
+    if (letterSound) {
+      return [Sound.phrasePart(this.current.review ? "review" : "jar"), letterSound];
+    }
+    return [Sound.phrasePart(this.current.review ? "reviewWord" : "jarWord"), Sound.wordPart(food)];
+  },
+
+  // What she hears for a food's letter: the recorded sound ("sss"),
+  // or else the word itself ("sidrun").
+  soundOf: function (food) {
+    return Sound.letterSound(food) || Sound.wordPart(food);
   },
 
   // The 👆 hand points at 🔊 (pointing at the right letter would give it away).
@@ -121,9 +134,9 @@ var Jar = {
     if (right) right.classList.add("glow");
     var other = Levels.foodForLetter(letter) || { letter: letter, word: letter };
     Sound.speak([
-      Sound.letterPart(other),
+      this.soundOf(other),
       Sound.phrasePart("listen"),
-      Sound.letterPart(food),
+      this.soundOf(food),
     ]);
   },
 
@@ -145,9 +158,10 @@ var Jar = {
     Effects.sparkles(jarAt.x, jarAt.y, 16);
     Sound.fx("sparkle");
 
-    // "sss… strawberry!"
+    // "sss… sidrun!" (or just "sidrun!" until the sound is recorded)
+    var letterSound = Sound.letterSound(food);
     await Promise.race([
-      Sound.speak([Sound.letterOnlyPart(food), Sound.wordPart(food)]),
+      Sound.speak(letterSound ? [letterSound, Sound.wordPart(food)] : [Sound.wordPart(food)]),
       wait(6000),
     ]);
     await wait(250);
@@ -186,12 +200,11 @@ var Jar = {
       await Promise.race([Game.say("star"), wait(4000)]);
     } else {
       Game.renderLevelBar(levelIndex, food.id);
+      Pole.celebrateNew(); // a new stick in the straw pole
     }
 
     if (!review && Levels.isDone(levelIndex)) {
       await Game.levelComplete(levelIndex);
-    } else {
-      Game.say("again");
     }
     this.current = null;
     Game.busy = false;

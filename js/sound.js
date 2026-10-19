@@ -3,12 +3,15 @@
 
    Every sound first looks for a recorded file. If there is none, it
    falls back to something that always works:
-     letter sounds  assets/sounds/letters/s.mp3   → browser voice "s, like strawberry"
-     food words     assets/sounds/words/apple.mp3 → browser voice "apple"
-     sentences      assets/sounds/voice/yay.mp3   → browser voice (text from config.js)
+     food words     assets/sounds/words/apple.mp3 → built-in Estonian clip → tablet voice
+     sentences      assets/sounds/voice/yay.mp3   → built-in Estonian clip → tablet voice
+     letter sounds  assets/sounds/letters/s.mp3   → (none: the jar asks for the word's first letter)
      effects        assets/sounds/fx/crunch.mp3   → made in code (synth.js)
      music          assets/music/theme.mp3        → no music
-   Files can be .mp3 or .m4a.
+   The built-in clips are in assets/sounds/builtin/ (see voice-index.js).
+   The tablet's own voice is used only if it speaks the game's language:
+   Estonian words read by an English voice would teach the wrong sounds.
+   Files can be .mp3, .m4a or .wav.
    ===================================================================== */
 
 var Sound = {
@@ -21,14 +24,15 @@ var Sound = {
 
   clips: {},          // "sounds/letters/s" → Promise of the recording (or null)
   found: {},          // "sounds/letters/s" → the recording once we know (or null)
+  builtinClips: {},   // url → Promise of a built-in Estonian clip
   voiceToken: 0,      // goes up each time a new sentence starts; older ones stop
   voiceStop: null,    // stops the sentence that is playing right now
   speaking: false,
   voice: null,        // chosen browser voice
   utterances: [],     // keeps sentences alive until they finish (Safari needs this)
 
-  FX: ["pop", "crunch", "dip", "shine", "sparkle", "unlock", "cheer",
-       "whoosh", "boing", "sour", "star"],
+  FX: ["pop", "crunch", "crack", "dip", "bubble", "pling", "snap", "shine",
+       "sparkle", "unlock", "cheer", "whoosh", "boing", "sour", "star"],
 
   /* -------------------------------------------------------------------
      Setup (runs when the page opens — no sound yet)
@@ -124,16 +128,34 @@ var Sound = {
      Finding recordings
      ------------------------------------------------------------------- */
 
-  // Look for a recording, e.g. find("sounds/letters/s") tries s.mp3 then s.m4a.
+  // Look for a recording, e.g. find("sounds/letters/s") tries s.mp3, s.m4a, s.wav.
   find: function (base) {
     var self = this;
     if (!this.clips[base]) {
-      this.clips[base] = this.tryTypes(base, ["mp3", "m4a"], 0).then(function (clip) {
-        self.found[base] = clip;
-        return clip;
-      });
+      this.clips[base] = this.tryUrls(this.urlsFor(base), 0, base.indexOf("music/") === 0)
+        .then(function (clip) {
+          self.found[base] = clip;
+          return clip;
+        });
     }
     return this.clips[base];
+  },
+
+  // All the file names to try for one recording. A letter like "õ" can
+  // be saved in two ways (Macs write it as "o" + "~"), so we try both.
+  urlsFor: function (base) {
+    var names = [base];
+    if (base.normalize) {
+      names = [base.normalize("NFC")];
+      if (base.normalize("NFD") !== names[0]) names.push(base.normalize("NFD"));
+    }
+    var urls = [];
+    names.forEach(function (name) {
+      ["mp3", "m4a", "wav"].forEach(function (type) {
+        urls.push("assets/" + name.split("/").map(encodeURIComponent).join("/") + "." + type);
+      });
+    });
+    return urls;
   },
 
   // Like find(), but don't wait longer than a moment (then use the fallback).
@@ -142,14 +164,31 @@ var Sound = {
     return Promise.race([this.find(base), wait(1500).then(function () { return null; })]);
   },
 
-  tryTypes: function (base, types, index) {
-    if (index >= types.length) return Promise.resolve(null);
+  tryUrls: function (urls, index, isMusic) {
+    if (index >= urls.length) return Promise.resolve(null);
     var self = this;
-    var url = "assets/" + base.split("/").map(encodeURIComponent).join("/") + "." + types[index];
-    var isMusic = base.indexOf("music/") === 0;
-    return this.loadClip(url, isMusic).then(function (clip) {
-      return clip || self.tryTypes(base, types, index + 1);
+    return this.loadClip(urls[index], isMusic).then(function (clip) {
+      return clip || self.tryUrls(urls, index + 1, isMusic);
     });
+  },
+
+  // The built-in Estonian clip for a part, if there is one and it still
+  // says exactly the words in config.js. Gives back a clip or null.
+  builtin: function (part) {
+    var index = window.BUILTIN_VOICE;
+    if (!CONFIG.builtinVoice || !index || !index.clips || !part.file || !part.text) {
+      return Promise.resolve(null);
+    }
+    var entry = index.clips[part.file.replace(/^sounds\//, "")];
+    if (!entry || sameWords(entry.text) !== sameWords(part.text)) return Promise.resolve(null);
+    var url = "assets/sounds/builtin/" + entry.file.split("/").map(encodeURIComponent).join("/");
+    if (!this.builtinClips[url]) this.builtinClips[url] = this.loadClip(url, false);
+    return this.builtinClips[url];
+  },
+
+  // Like builtin(), but don't wait longer than a moment.
+  builtinQuick: function (part) {
+    return Promise.race([this.builtin(part), wait(1500).then(function () { return null; })]);
   },
 
   // Load one sound file. Gives back a clip, or null if it does not exist.
@@ -225,7 +264,24 @@ var Sound = {
       var name = names[next++];
       return self.find(name).then(worker);
     }
-    return Promise.all([worker(), worker(), worker(), worker()]);
+    // Also get the built-in Estonian clips ready.
+    var builtins = Promise.all(this.allParts().map(function (part) { return self.builtin(part); }));
+    return Promise.all([worker(), worker(), worker(), worker(), builtins]);
+  },
+
+  // Every sentence and word the game can say (for loading and the parent screen).
+  allParts: function () {
+    var self = this;
+    var parts = [];
+    Object.keys(CONFIG.phrases).forEach(function (key) { parts.push(self.phrasePart(key)); });
+    CONFIG.levels.forEach(function (level) { parts.push(self.placePart(level)); });
+    allFoods().forEach(function (food) { parts.push(self.wordPart(food)); });
+    if (CONFIG.letterSpeech) {
+      CONFIG.levels.forEach(function (level) {
+        level.foods.forEach(function (food) { if (food.letter) parts.push(self.letterPart(food)); });
+      });
+    }
+    return parts;
   },
 
   /* -------------------------------------------------------------------
@@ -291,17 +347,22 @@ var Sound = {
      for (file) and words for the browser voice if there is none (text).
      ------------------------------------------------------------------- */
 
-  // The letter riddle: recording "sss", or the voice says "s, like strawberry".
+  // A letter's sound: the recording "sss". Only if letterSpeech is set in
+  // config.js does a voice fill in for it ("ess nagu sidrun").
   letterPart: function (food) {
     return {
       file: "sounds/letters/" + food.letter,
-      text: fillIn(CONFIG.letterSpeech, { letter: food.letter, word: food.word }),
+      text: CONFIG.letterSpeech ? fillIn(CONFIG.letterSpeech, { letter: food.letter, word: food.word }) : "",
     };
   },
 
-  // Just the letter sound (recording "sss", or the voice says "s").
-  letterOnlyPart: function (food) {
-    return { file: "sounds/letters/" + food.letter, text: food.letter };
+  // Can the game play this letter's sound? Gives back the part, or null
+  // (then the game uses the word instead: "Millise tähega algab … sidrun").
+  letterSound: function (food) {
+    if (!food || !food.letter) return null;
+    var part = this.letterPart(food);
+    if (this.found[part.file] || CONFIG.letterSpeech) return part;
+    return null;
   },
 
   // The food's name: recording, or the voice says "strawberry".
@@ -338,7 +399,8 @@ var Sound = {
         return false;
       }
       var part = parts[i];
-      var clip = part.file ? await this.findQuick(part.file) : null;
+      var clip = part.file ? await this.findQuick(part.file) : null; // her parent's recording
+      if (!clip) clip = await this.builtinQuick(part);                // the built-in Estonian clip
       if (token !== this.voiceToken) return false;
       var playing = clip ? this.playClip(clip) : await this.speakText(part.text);
       if (token !== this.voiceToken) { playing.stop(); return false; }
@@ -382,13 +444,18 @@ var Sound = {
     if (!synth || !window.SpeechSynthesisUtterance || !text || !String(text).trim()) {
       return nothing;
     }
+    // Only a voice that speaks the game's language may read the words.
+    // (iPads have no Estonian voice: then we stay quiet rather than
+    // read Estonian with an English voice.)
+    var voice = await this.voiceForLanguage();
+    if (!voice) return nothing;
     if (synth.speaking || synth.pending) {
       synth.cancel();
       await wait(80); // Safari needs a breath between stop and start
     }
     var utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = languageTag();
-    if (this.voice) utterance.voice = this.voice;
+    utterance.voice = voice;
+    utterance.lang = voice.lang || languageTag();
     utterance.rate = CONFIG.speechRate || 1;
     utterance.pitch = CONFIG.speechPitch || 1;
     utterance.volume = this.volume;
@@ -414,6 +481,16 @@ var Sound = {
   loadVoices: function () {
     this.voices = (window.speechSynthesis && speechSynthesis.getVoices()) || [];
     this.voice = this.pickVoice();
+  },
+
+  // The tablet's voice for the game's language, or null if it has none.
+  // Voices can arrive a moment after the page opens, so wait a little.
+  voiceForLanguage: async function () {
+    for (var i = 0; i < 10 && this.voices.length === 0 && window.speechSynthesis; i++) {
+      await wait(100);
+      this.loadVoices();
+    }
+    return this.voice;
   },
 
   // Voices that sound silly or robotic (Apple's joke voices and old voices).
@@ -450,7 +527,8 @@ var Sound = {
     var list = this.voicesForLanguage();
     var name = this.voiceName;
     if (name) {
-      var chosen = this.voices.filter(function (voice) { return voice.name === name; })[0];
+      // The voice chosen on the parent screen (only if it speaks the language).
+      var chosen = list.filter(function (voice) { return voice.name === name; })[0];
       if (chosen) return chosen;
     }
     return list[0] || null;
@@ -523,4 +601,10 @@ function silentSoundUrl() {
   text(36, "data"); view.setUint32(40, samples, true);
   for (var i = 0; i < samples; i++) bytes[44 + i] = 128; // 128 = silence
   return URL.createObjectURL(new Blob([bytes], { type: "audio/wav" }));
+}
+
+// Compare two sentences, ignoring extra spaces (and how "õ" is stored).
+function sameWords(text) {
+  var words = String(text || "").replace(/\s+/g, " ").trim();
+  return words.normalize ? words.normalize("NFC") : words;
 }
