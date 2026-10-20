@@ -3,7 +3,7 @@
    ===================================================================== */
 
 var Game = {
-  screen: "title",  // "title" | "shop" | "jar"
+  screen: "title",  // "title" | "shop" | "jar" | "pole"
   busy: false,      // true while an animation runs (taps are ignored)
   step: 0,          // goes up whenever "what to do next" changes
 
@@ -30,6 +30,7 @@ var Game = {
 
       Shop.init();
       Jar.init();
+      Pole.init();
       Parent.init();
       Hint.init();
 
@@ -57,15 +58,42 @@ var Game = {
   // Fix up config.js values the game can't use, and warn about mistakes
   // (warnings show in the browser's developer console).
   checkConfig: function () {
-    // The stick has room for 1 to 5 foods.
-    CONFIG.maxOnStick = Math.max(1, Math.min(5, Math.round(CONFIG.maxOnStick) || 5));
+    // Numbers the game can use: 1 to 5 foods on a stick, 1 to 10 pot taps.
+    CONFIG.maxOnStick = Math.max(1, Math.min(5, Math.round(Number(CONFIG.maxOnStick)) || 5));
+    var warn = function (text) { console.warn("config.js: " + text); };
+    var raw = CONFIG.potTaps;
+    var isNumber = typeof raw === "number" || (typeof raw === "string" && raw.trim() !== "");
+    var taps = isNumber ? Math.round(Number(raw)) : NaN;
+    if (raw == null || isNaN(taps)) {
+      if (CONFIG.potTaps != null) warn("potTaps should be a number like 3.");
+      taps = 3;
+    }
+    CONFIG.potTaps = Math.max(1, Math.min(10, taps));
+    var seen = {};
+    CONFIG.starterFoods.forEach(function (food) {
+      if (!food) return;
+      if (seen[food.id]) warn("the food id \"" + food.id + "\" is used twice.");
+      seen[food.id] = true;
+      if (food.letter) warn("the starter food \"" + food.id + "\" has a letter; starter foods never get a jar.");
+    });
+    var letters = [];
     CONFIG.levels.forEach(function (level) {
       level.foods.forEach(function (food) {
+        if (!food) return;
+        if (seen[food.id]) warn("the food id \"" + food.id + "\" is used twice.");
+        seen[food.id] = true;
         if (!food.letter) {
-          console.warn("config.js: the food \"" + food.id + "\" in level \"" + level.id +
-            "\" has no letter, so it is on the shelf from the start.");
+          warn("the food \"" + food.id + "\" in level \"" + level.id + "\" has no letter, so it is on the shelf from the start.");
+        } else {
+          letters.push(String(food.letter).toLowerCase());
         }
       });
+    });
+    // Letters that sound alike at the start of an Estonian word.
+    [["i", "j"], ["b", "p"], ["d", "t"], ["g", "k"], ["z", "s"]].forEach(function (pair) {
+      if (letters.indexOf(pair[0]) !== -1 && letters.indexOf(pair[1]) !== -1) {
+        warn("the letters " + pair[0] + " and " + pair[1] + " sound alike at the start of a word; use only one of them.");
+      }
     });
   },
 
@@ -121,6 +149,7 @@ var Game = {
     $("#repeat-button").classList.remove("hidden");
     this.renderLevelBar();
     Shop.enter();
+    Pole.renderButton();
     this.step++;
     Hint.restart();
     if (!document.querySelector("#shelf-grid .food-button")) {
@@ -128,13 +157,14 @@ var Game = {
       // go straight to a jar.
       var self = this;
       this.busy = true;
-      Promise.race([Sound.speak([Sound.phrasePart("welcome")]), wait(4000)]).then(function () {
+      Promise.race([Sound.speak([Sound.phrasePart("call"), Sound.phrasePart("welcome")]), wait(7000)]).then(function () {
         self.busy = false;
         self.afterStick();
       });
       return;
     }
-    Sound.speak([Sound.phrasePart("welcome"), Sound.phrasePart("tapFood")]);
+    // The street seller's call, what to do, then the bear's wish.
+    Sound.speak([Sound.phrasePart("call"), Sound.phrasePart("tapFood")].concat(Shop.wishParts()));
   },
 
   /* -------------------------------------------------------------------
@@ -149,9 +179,17 @@ var Game = {
   // The current instruction, as parts that Sound.speak() understands.
   instruction: function () {
     if (this.screen === "jar") return Jar.instruction();
-    if (Shop.stick.length === 0) return [Sound.phrasePart("tapFood")];
-    if (!Shop.coated && Shop.stick.length >= CONFIG.maxOnStick) return [Sound.phrasePart("stickFull")];
-    if (!Shop.coated) return [Sound.phrasePart("tapPot")];
+    if (this.screen === "pole") return Pole.instruction();
+    if (Shop.stick.length === 0) return [Sound.phrasePart("tapFood")].concat(Shop.wishParts());
+    if (!Shop.coated) {
+      var cooked = Shop.cookSteps() > 0 && Shop.syrupReady();
+      // (With potTaps 1 the syrup is always golden: once the hand points at the pot.)
+      var alwaysReady = Shop.cookSteps() === 0 && Shop.stick.length >= Math.min(3, CONFIG.maxOnStick);
+      if (cooked || alwaysReady) return [Sound.phrasePart("syrupReady")];
+      if (Shop.stick.length >= CONFIG.maxOnStick) return [Sound.phrasePart("stickFull")];
+      if (Shop.syrup > 0) return [Sound.phrasePart("cook")];
+      return [Sound.phrasePart("tapPot")];
+    }
     if (!Shop.eating) return [Sound.phrasePart("tapStick")];
     return [Sound.phrasePart("keepGoing")];
   },
@@ -183,14 +221,19 @@ var Game = {
   hintTarget: function () {
     if (this.screen === "title") return $("#play-button");
     if (this.screen === "jar") return Jar.hintTarget();
+    if (this.screen === "pole") return Pole.hintTarget();
     if (this.screen !== "shop") return null;
     var buttons = document.querySelectorAll("#shelf-grid .food-button");
     var newest = buttons[buttons.length - 1];
-    if (Shop.stick.length === 0) return newest;
+    // The food the bear wishes for (until it is on the stick).
+    var wished = Shop.wish && !Shop.wishMet && Shop.stick.indexOf(Shop.wish) === -1
+      ? Shop.shelfButton(Shop.wish.id) : null;
+    if (Shop.stick.length === 0) return wished || newest;
     if (!Shop.coated) {
-      return Shop.stick.length >= Math.min(3, CONFIG.maxOnStick) ? $("#pot-button") : newest;
+      var potTime = Shop.syrup > 0 || Shop.stick.length >= Math.min(3, CONFIG.maxOnStick);
+      return potTime ? $("#pot-button") : (wished || newest);
     }
-    return $("#stick-foods").lastElementChild || $("#stick-area");
+    return Shop.topPiece() || $("#stick-area");
   },
 
   /* -------------------------------------------------------------------
@@ -206,15 +249,23 @@ var Game = {
     if (jar) {
       Jar.open(jar);
     } else {
-      this.say("again");
+      this.newRound();
     }
   },
 
-  // Back to the shop after the jar.
-  backToShop: function () {
+  // Back to the shop after the jar, with a new round (the bear's next
+  // wish). noNewRound: from the straw pole, or when the pole is shown first.
+  backToShop: function (noNewRound) {
     this.screen = "shop";
     this.step++;
     Hint.restart();
+    if (!noNewRound) this.newRound();
+  },
+
+  // A new candy stick: the bear makes a new wish.
+  newRound: function () {
+    Shop.newWish();
+    Sound.speak([Sound.phrasePart("again")].concat(Shop.wishParts()));
   },
 
   /* -------------------------------------------------------------------
@@ -232,8 +283,8 @@ var Game = {
 
     // Emoji decorations in free spots around the shop.
     var spots = [
-      { x: 205, y: 58, size: 62 }, { x: 790, y: 60, size: 64 },
-      { x: 655, y: 245, size: 72 }, { x: 960, y: 480, size: 58 },
+      { x: 610, y: 50, size: 54 }, { x: 714, y: 46, size: 54 },
+      { x: 655, y: 245, size: 72 }, { x: -70, y: 370, size: 64 },
       { x: -70, y: 200, size: 80 }, { x: 1070, y: 260, size: 80 },
       { x: -60, y: 480, size: 70 }, { x: 1060, y: 520, size: 64 },
     ];
@@ -277,6 +328,16 @@ var Game = {
     $("#level-icon").textContent = level.icon || "⭐";
     var slots = $("#level-slots");
     slots.innerHTML = "";
+    // Keep the bar left of the stick (236px for the slots), even when a
+    // place has many foods: then two rows of slots, so they stay big enough.
+    var count = Math.max(1, level.foods.length);
+    var oneRow = Math.min(54, Math.floor((236 - (count - 1) * 8) / count));
+    var perRow = Math.ceil(count / 2);
+    var twoRows = Math.min(32, Math.floor(236 / perRow) - 8);
+    var size = Math.max(oneRow, twoRows);
+    slots.classList.toggle("two-rows", twoRows > oneRow);
+    slots.style.width = twoRows > oneRow ? perRow * (size + 8) + "px" : "";
+    slots.style.setProperty("--slot", size + "px");
     level.foods.forEach(function (food) {
       var slot = make("div", "level-slot");
       slot.dataset.id = food.id;

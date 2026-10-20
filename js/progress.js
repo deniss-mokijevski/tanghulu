@@ -6,7 +6,8 @@
    ===================================================================== */
 
 var Progress = {
-  KEY: "candy-stick-shop-v1",
+  KEY: "candy-stick-shop-v2",   // v2 = the Estonian letters
+  OLD_KEY: "candy-stick-shop-v1", // the English version: only its settings are kept
   data: null,
 
   // A brand-new game.
@@ -30,6 +31,12 @@ var Progress = {
     var saved = null;
     try {
       saved = JSON.parse(localStorage.getItem(this.KEY) || "null");
+      if (!saved) {
+        // Played the English version before? Keep the volume and other
+        // settings, but start the (new, Estonian) letters fresh.
+        var old = JSON.parse(localStorage.getItem(this.OLD_KEY) || "null");
+        if (old && old.settings) saved = { settings: old.settings };
+      }
     } catch (error) {
       saved = null; // broken or blocked storage → start fresh
     }

@@ -77,6 +77,36 @@ var Synth = {
     this.tone(ctx, out, { freq: randomBetween(140, 190), to: 60, length: 0.08, volume: 0.3 });
   },
 
+  // The thin sugar shell cracks like glass (layered over the crunch).
+  crack: function (ctx, out) {
+    this.burst(ctx, out, { freq: randomBetween(5000, 7000), q: 3, filter: "bandpass", length: 0.035, volume: 0.6 });
+    this.tone(ctx, out, { freq: randomBetween(2600, 3400), to: randomBetween(1800, 2200), length: 0.12, volume: 0.12, type: "triangle" });
+    this.tone(ctx, out, { start: 0.02, freq: randomBetween(4200, 5200), length: 0.08, volume: 0.06, type: "sine" });
+  },
+
+  // Syrup bubbling in the pot: "blub, blub".
+  bubble: function (ctx, out) {
+    for (var i = 0; i < 3; i++) {
+      this.tone(ctx, out, {
+        start: i * randomBetween(0.08, 0.14), freq: randomBetween(160, 240), to: randomBetween(420, 620),
+        length: 0.07, volume: 0.3,
+      });
+    }
+  },
+
+  // The syrup is golden and ready: a bright little bell.
+  pling: function (ctx, out) {
+    this.tone(ctx, out, { freq: 1760, length: 0.7, volume: 0.16, type: "triangle" });
+    this.tone(ctx, out, { start: 0.06, freq: 2637, length: 0.6, volume: 0.1, type: "triangle" });
+  },
+
+  // The sugar wing snaps off: a sharp, glassy "klõps".
+  snap: function (ctx, out) {
+    this.burst(ctx, out, { freq: 4500, q: 2, filter: "highpass", length: 0.05, volume: 0.6 });
+    this.tone(ctx, out, { freq: 3800, to: 2900, length: 0.18, volume: 0.12, type: "triangle" });
+    this.tone(ctx, out, { start: 0.05, freq: 5200, length: 0.12, volume: 0.06 });
+  },
+
   // Food jumps onto the stick.
   pop: function (ctx, out) {
     this.tone(ctx, out, {

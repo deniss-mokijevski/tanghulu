@@ -240,7 +240,13 @@ function allFoods() {
   CONFIG.levels.forEach(function (level) {
     level.foods.forEach(function (food) { list.push(food); });
   });
-  return list.filter(Boolean); // a stray extra comma in config.js leaves a gap
+  // A stray extra comma in config.js leaves a gap; a food listed twice counts once.
+  var seen = {};
+  return list.filter(function (food) {
+    if (!food || seen[food.id]) return false;
+    seen[food.id] = true;
+    return true;
+  });
 }
 
 // Find a food by its id.

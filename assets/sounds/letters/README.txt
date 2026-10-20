@@ -1,7 +1,8 @@
-Letter sounds (optional). One short recording per letter, saying the SOUND, not the name:
-  s.mp3  "sss"          a.mp3  "a" as in apple   t.mp3  "t" (no "uh")   p.mp3  "p" (a puff)
-  m.mp3  "mmm"          b.mp3  "b" (short)       k.mp3  "k"            l.mp3  "lll"
-  w.mp3  "w" (short)    d.mp3  "d" (short)       h.mp3  "h" (a breath)  n.mp3  "nnn"
+Letter sounds (optional, but the most worth recording). One short recording per
+letter, saying the SOUND, not the letter's name:
+  a.mp3 "a" (short, as in arbuus)   m.mp3 "mmm"   s.mp3 "sss"   l.mp3 "lll"
+  õ.mp3 "õ" (as in õun)   v.mp3 "vvv"   j.mp3 "j" (like a short i)   n.mp3 "nnn"
+  h.mp3 "hhh" (a breath)   k.mp3 "k"   p.mp3 "p"   t.mp3 "t"   (no vowel after k, p, t)
 
-.mp3 or .m4a. Without a file the browser voice says "s, like strawberry".
-See README.md for the full checklist.
+.mp3, .m4a or .wav. Until a letter is recorded, its jar says the word and asks
+which letter it starts with. See README.md (section 8) for the full checklist.

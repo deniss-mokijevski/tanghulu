@@ -48,7 +48,17 @@ var Hint = {
       this.later();
       return;
     }
+    this.pointAt(target);
 
+    // Say the instruction again — only once per step, so it doesn't nag.
+    if (Sound.unlocked && Game.step !== this.spokenStep && !Sound.speaking) {
+      this.spokenStep = Game.step;
+      Game.sayInstruction();
+    }
+  },
+
+  // Show the hand next to one thing (until the next touch).
+  pointAt: function (target) {
     // Point up at things in the top half, down at things in the bottom half.
     // (Shelf foods always get the hand below them, so it doesn't cover
     // the food in the row above.)
@@ -59,11 +69,5 @@ var Hint = {
     this.hand.style.left = where.x + "px";
     this.hand.style.top = (pointUp ? where.y + where.height / 2 : where.y - where.height / 2) + "px";
     this.hand.classList.remove("hidden");
-
-    // Say the instruction again — only once per step, so it doesn't nag.
-    if (Sound.unlocked && Game.step !== this.spokenStep && !Sound.speaking) {
-      this.spokenStep = Game.step;
-      Game.sayInstruction();
-    }
   },
 };
