@@ -7,7 +7,7 @@
    the word and asks for its first letter: "Millise tähega algab see
    sõna? … sidrun".)
      • Right letter → the jar pops open, the voice says "sss… sidrun!",
-                      and the food flies onto the shelf.
+                      and the food flies into its bowl on the shelf.
      • Wrong letter → that letter says its own sound and wiggles, the
                       right one glows softly, and she tries again.
    No buzzers, no losing, no timers.
@@ -140,7 +140,7 @@ var Jar = {
     ]);
   },
 
-  // The jar pops open and the food flies onto the shelf.
+  // The jar pops open and the food flies into its bowl on the shelf.
   openJar: async function (button) {
     var food = this.current.food;
     var review = this.current.review;
@@ -162,20 +162,23 @@ var Jar = {
     await Promise.race([Sound.speak(Sound.letterAndWord(food)), wait(6000)]);
     await wait(250);
 
-    // Save it, then fly the food to its place on the shelf.
-    var from = Stage.where($("#jar-food"));
+    // Save it. The new food's bowl is drawn still closed; the shelf slides
+    // to it (behind the jar), then the food flies in and the lid pops off.
     if (!review) Progress.unlock(food.id);
     if (this.current.counted) Levels.countJar(); // for the "every 3rd jar is a review" rule
-    $("#jar-screen").classList.add("hidden");
-    Shop.renderShelf(review ? null : food.id);
+    Shop.renderShelf(review ? null : food.id); // (the jar is still showing)
     var target = Shop.shelfButton(food.id);
+    if (target) await Shop.showBowl(target);
+    var from = Stage.where($("#jar-food"));
+    $("#jar-screen").classList.add("hidden");
     var flyer = make("div");
     flyer.style.fontSize = "100px";
     flyer.appendChild(Assets.picture("foods", food, { framed: false }));
     Sound.fx("whoosh");
     if (target) {
-      var to = Stage.where(target);
-      to.scale = 0.75;
+      var to = Stage.where(target.querySelector(".picture") || target);
+      to.scale = 0.65; // the 130 px flyer becomes the 88 px food in the bowl
+      if (!review) setTimeout(function () { Shop.openBowl(target); }, 350); // the lid hops off to catch it
       await Effects.fly(flyer, from, to, 900, 130);
       target.classList.remove("arriving");
       target.classList.add("new-food");

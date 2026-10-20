@@ -60,12 +60,18 @@ function onTap(element, handler) {
 
 // Like onTap, but for things on the shelf, which scrolls sideways: it
 // waits until the finger lifts, so a swipe (to scroll) is not a tap.
-// The finger may wobble a little (12 px) and it is still a tap.
+// The finger may wobble a little (20 px) and it is still a tap.
 function onTapNoSwipe(element, handler) {
   var start = null;
   function scroller() { return element.closest ? element.closest(".scroller") : null; }
   function begin(x, y) {
     var box = scroller();
+    // A finger that only stops a shelf still gliding from a swipe is not a tap.
+    var now = Date.now();
+    if (box && now - (box.movedAt || 0) < 100 && box.movedAt - (box.movedBefore || 0) < 100) {
+      start = null;
+      return;
+    }
     start = { x: x, y: y, scroll: box ? box.scrollLeft : 0 };
   }
   function end(x, y, event) {
@@ -74,7 +80,7 @@ function onTapNoSwipe(element, handler) {
     var moved = Math.abs(x - start.x) + Math.abs(y - start.y);
     var scrolled = box ? Math.abs(box.scrollLeft - start.scroll) : 0;
     start = null;
-    if (moved < 12 && scrolled < 4) handler(event);
+    if (moved < 20 && scrolled < 4) handler(event);
   }
   if (window.PointerEvent) {
     element.addEventListener("pointerdown", function (event) {
@@ -97,6 +103,18 @@ function onTapNoSwipe(element, handler) {
     element.addEventListener("mousedown", function (event) { begin(event.clientX, event.clientY); });
     element.addEventListener("mouseup", function (event) { end(event.clientX, event.clientY, event); });
   }
+}
+
+// A sideways shelf: remember when the browser itself keeps it moving (a
+// swipe that glides on). Our own slides (box.gliding) don't count. Two
+// scroll events close together mean "gliding"; a single jump doesn't.
+function watchScroller(box) {
+  box.addEventListener("scroll", function () {
+    var now = Date.now();
+    if (box.gliding || now - (box.glideEnd || 0) < 80) return;
+    box.movedBefore = box.movedAt || 0;
+    box.movedAt = now;
+  }, { passive: true });
 }
 
 // Restart a CSS animation class (e.g. "wiggle") on an element.

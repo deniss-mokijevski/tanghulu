@@ -48,7 +48,13 @@ var Hint = {
       this.later();
       return;
     }
-    this.pointAt(target);
+    // A bowl may be scrolled out of sight: slide the shelf to it first.
+    // (A touch meanwhile makes a new timer in restart(): then no hand.)
+    var self = this;
+    var timer = this.timer;
+    Shop.showBowl(target).then(function () {
+      if (self.timer === timer && !Game.busy && !Game.paused()) self.pointAt(target);
+    });
 
     // Say the instruction again — only once per step, so it doesn't nag.
     if (Sound.unlocked && Game.step !== this.spokenStep && !Sound.speaking) {

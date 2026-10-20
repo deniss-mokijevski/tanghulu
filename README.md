@@ -5,8 +5,8 @@ A tablet game for a child who can't read yet. She runs a candy-skewer shop
 **Estonian** letter sounds along the way. Everything she hears and sees is in Estonian;
 this README and the parent screen are in English for the grown-ups.
 
-- **Shop:** tap foods to put them on the stick, cook the sugar in the pot until it's golden, dip the stick, and let the bear eat it.
-- **Letter jar:** after every finished stick, a locked jar appears. She hears a sound (or a word) and taps the matching letter to open the jar and win a new food.
+- **Shop:** every food sits in its own bowl (a piala) on the shelf. Tap a bowl and the food hops out onto the stick; cook the sugar in the pot until it's golden, dip the stick, and let the bear eat it. Foods she hasn't won yet have a closed bowl with a lid; swipe the shelf sideways to see them all.
+- **Letter jar:** after every finished stick, a locked jar appears. She hears a sound (or a word) and taps the matching letter to open the jar: the lid of that food's bowl pops off and the food flies in.
 - **Places:** the kitchen (a m s l), the beach (õ v j n), then space (h k p t). Each place has 4 new letters, from the easy, long sounds to the short ones, the way Estonian teachers do it.
 - **From the original tanghulu:** the hawthorn berry, the bubbling sugar pot, the thin sugar "wing", the glassy crack, the street seller's call and the straw pole where every won stick is kept (see [section 7](#7-from-the-original-tanghulu)).
 - **Nothing to read:** every instruction is spoken, 🔊 repeats it, and a bouncing 👆 shows what to tap after 5 quiet seconds. There are no timers, no buzzers and no way to lose.
@@ -220,10 +220,13 @@ file name, plain English letters), an `emoji`, a `word` and a `letter`. The lett
 first letter **and** first sound of the Estonian word, and each letter should appear only once
 in the whole game. Don't use both of `i` and `j`, `b` and `p`, `d` and `t`, `g` and `k`, or
 `z` and `s`: at the start of an Estonian word they sound alike (banaan starts like pirn).
-A place can have more or fewer than 4 foods. A food without a `letter` is simply on the shelf
-from the start.
+A place can have more or fewer than 4 foods. A food without a `letter` simply has an open
+bowl from the start.
 **Adding a place:** copy a whole level block `{ … },` and change it.
-The shelf fits about 16 foods with big buttons; with more foods the buttons get smaller.
+Every food has its own bowl on the shelf, in the order written in `config.js`. A food she
+hasn't won yet has a closed bowl with a lid; the bowl's color and the icon on the lid show the
+place where it is won. With many foods the shelf scrolls sideways, so any number fits: sweets
+(🍬 🍭 🧁) or anything else are just more foods.
 Keep at least one starter food, so she can make her first stick.
 
 **If you change a sentence or a word**, its built-in voice clip no longer matches (the game
@@ -530,7 +533,7 @@ letters fresh (they are different letters) but keeps the volume and other settin
 | `drawing-sheets.html` | The printable drawing sheets. |
 | `css/style.css` | How everything looks: colors, sizes, positions, animations. |
 | `js/main.js` | Starts the game and connects the parts (title screen, instructions, places). |
-| `js/shop.js` | The shop: shelf, stick, pot (cooking the sugar), sugar wing, bear and its wishes. |
+| `js/shop.js` | The shop: the shelf of bowls (scrolls sideways), stick, pot (cooking the sugar), sugar wing, bear and its wishes. |
 | `js/jar.js` | The letter jar riddle. |
 | `js/pole.js` | The straw pole with all her won sticks. |
 | `js/levels.js` | Which place she's in and what the next jar holds (including review jars). |
