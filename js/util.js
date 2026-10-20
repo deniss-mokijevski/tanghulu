@@ -80,16 +80,27 @@ function onTapNoSwipe(element, handler) {
     var moved = Math.abs(x - start.x) + Math.abs(y - start.y);
     var scrolled = box ? Math.abs(box.scrollLeft - start.scroll) : 0;
     start = null;
-    if (moved < 20 && scrolled < 4) handler(event);
+    if (moved < 20 && scrolled < 6) handler(event);
   }
   if (window.PointerEvent) {
+    var cancelled = false;
     element.addEventListener("pointerdown", function (event) {
       if (event.button > 0) return;
+      cancelled = false;
       begin(event.clientX, event.clientY);
     });
     element.addEventListener("pointerup", function (event) { end(event.clientX, event.clientY, event); });
-    // The browser took over the finger to scroll: not a tap.
-    element.addEventListener("pointercancel", function () { start = null; });
+    // The browser took over the finger to scroll. If the finger then lifts
+    // close to where it started and the shelf hardly moved, it was a
+    // smeared tap after all (small fingers slide a bit).
+    element.addEventListener("pointercancel", function () { cancelled = true; });
+    element.addEventListener("touchend", function (event) {
+      if (cancelled && start) {
+        var touch = event.changedTouches[0];
+        end(touch.clientX, touch.clientY, event);
+      }
+      cancelled = false;
+    });
   } else {
     element.addEventListener("touchstart", function (event) {
       begin(event.touches[0].clientX, event.touches[0].clientY);

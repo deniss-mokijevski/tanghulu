@@ -50,18 +50,21 @@ var Shop = {
     document.addEventListener(touchName, function () { self.touchedAt = Date.now(); }, true);
   },
 
-  // Show the shop (called when she presses ▶ and after each jar).
+  // Show the shop (called when she presses ▶).
   enter: function () {
     this.renderShelf();
-    // Start with her newest food in the middle (and the next closed bowls beside it).
-    var open = document.querySelectorAll("#shelf-grid .food-button");
-    var newest = open[open.length - 1];
-    var box = $("#shelf-scroll");
-    if (newest) box.scrollLeft = newest.offsetLeft + newest.offsetWidth / 2 - box.clientWidth / 2;
+    // Start with the food she won last in the right-most full column (the
+    // next closed bowls peek in beside it); a new game starts at the left.
+    var won = Progress.data.unlocked;
+    var newest = null;
+    for (var i = won.length - 1; i >= 0 && !newest; i--) newest = this.shelfButton(won[i]);
+    $("#shelf-scroll").scrollLeft = newest ? Math.max(0, Math.floor(newest.offsetLeft / 118) - 2) * 118 : 0;
     this.renderCustomer();
     this.renderStick();
     this.renderPot();
     this.newWish();
+    // The food the bear wishes for is in sight too.
+    if (this.wish) this.showBowl(this.shelfButton(this.wish.id), true);
     this.nudgeShelf();
   },
 
@@ -104,6 +107,9 @@ var Shop = {
       if (arriving) button.classList.add("arriving");
       button.setAttribute("aria-label", food.word);
       button.appendChild(Assets.picture("foods", food, { framed: true }));
+      Assets.find("foods", food.id).then(function (found) {
+        if (found && found.paper) button.classList.add("on-paper");
+      });
     } else {
       button.classList.add("closed");
       button.setAttribute("aria-label", "kinni");
@@ -210,8 +216,9 @@ var Shop = {
     }
   },
 
-  // Once per visit: if she doesn't touch anything, the shelf slides a
-  // little towards the hidden bowls and back ("there is more here").
+  // Once per visit: if she hasn't touched anything yet, the shelf slides
+  // a little towards the hidden bowls and back ("there is more here").
+  // Only 40 px, so every bowl stays where her finger expects it.
   nudgeShelf: function () {
     var self = this;
     var box = $("#shelf-scroll");
@@ -219,11 +226,13 @@ var Shop = {
     setTimeout(function () {
       var home = box.scrollLeft;
       var room = box.scrollWidth - box.clientWidth - home;
-      if (self.touchedAt > since || Game.busy || Game.screen !== "shop" || room < 40) return;
-      self.glideShelf(home + Math.min(80, room)).then(function (ok) {
+      var step = room >= 40 ? 40 : (home >= 40 ? -40 : 0);
+      if (self.touchedAt > since || Game.busy || Game.screen !== "shop" || !step) return;
+      self.glideShelf(home + step).then(function (ok) {
         if (!ok) return;
+        var turn = self.glideTurn; // a finger on the shelf or a newer slide changes it
         wait(250).then(function () {
-          if (self.touchedAt <= since) self.glideShelf(home);
+          if (self.glideTurn === turn) self.glideShelf(home);
         });
       });
     }, 1500);

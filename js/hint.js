@@ -17,6 +17,15 @@ var Hint = {
     // Any touch anywhere hides the hand and restarts the countdown.
     var eventName = window.PointerEvent ? "pointerdown" : "touchstart";
     document.addEventListener(eventName, function () { self.restart(); }, true);
+    // A finger dragging the shelf sends no more pointer events, but she
+    // isn't idle: wait until it lifts. (A thumb resting elsewhere doesn't count.)
+    var shelf = $("#shelf-scroll");
+    ["touchstart", "touchend", "touchcancel"].forEach(function (name) {
+      document.addEventListener(name, function (event) {
+        self.onShelf = [].some.call(event.touches, function (touch) { return shelf.contains(touch.target); });
+        if (name !== "touchstart") self.restart();
+      }, true);
+    });
     this.restart();
   },
 
@@ -39,7 +48,7 @@ var Hint = {
   },
 
   show: function () {
-    if (Game.busy || Game.paused()) {
+    if (Game.busy || Game.paused() || this.onShelf) {
       this.later();
       return;
     }
@@ -52,8 +61,10 @@ var Hint = {
     // (A touch meanwhile makes a new timer in restart(): then no hand.)
     var self = this;
     var timer = this.timer;
-    Shop.showBowl(target).then(function () {
-      if (self.timer === timer && !Game.busy && !Game.paused()) self.pointAt(target);
+    Shop.showBowl(target).then(function (ok) {
+      if (self.timer !== timer) return;
+      if (!ok || Game.busy || Game.paused()) { self.later(); return; }
+      self.pointAt(target);
     });
 
     // Say the instruction again — only once per step, so it doesn't nag.

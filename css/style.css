@@ -292,7 +292,14 @@ body.dark-floor #artist-line { color: #fff; }   /* the artist line sits on the f
   height: 456px;
   box-sizing: border-box;
   border-radius: 18px;
-  background: #e7c08c;
+  /* The same boards as on #shelf-grid, so they still show when the
+     shelf bounces at its ends (iPad) */
+  background:
+    repeating-linear-gradient(to bottom,
+      transparent 0, transparent 138px,
+      #b98048 138px, #b98048 140px,
+      var(--wood-dark) 140px, var(--wood-dark) 146px),
+    linear-gradient(#f1d3a8, #e7c08c);
   border: 8px solid var(--wood);
   box-shadow: 0 8px 0 rgba(0, 0, 0, 0.15);
 }
@@ -462,6 +469,12 @@ body.dark-floor #artist-line { color: #fff; }   /* the artist line sits on the f
   from { transform: translateY(30px) scale(0.85); opacity: 0.3; }
   to { transform: none; opacity: 1; }
 }
+/* A drawing on white paper that could not be cleaned is blended into the
+   bowl: animate the picture inside instead (else the paper flashes white),
+   and give the bowl a plain inside (else its rim shows through the food). */
+.bowl.took .picture.has-paper { animation: none; }
+.bowl.took .picture.has-paper > * { animation: bowl-refill 0.35s ease-out; }
+.bowl.on-paper .bowl-inside { border-color: #fffaf0; background: #fffaf0; }
 .bowl.rattle .bowl-lid { animation: lid-rattle 0.45s ease-in-out; }
 @keyframes lid-rattle {
   0%, 100% { transform: none; }
