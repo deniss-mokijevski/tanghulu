@@ -771,7 +771,7 @@ body.dark-floor #artist-line { color: #fff; }   /* the artist line sits on the f
   pointer-events: none;
   z-index: 35;
 }
-.fx-shard, .fx-confetti, .fx-emoji, .fx-drop, .fx-flyer {
+.fx-shard, .fx-glass, .fx-confetti, .fx-emoji, .fx-drop, .fx-flyer {
   position: absolute;
   transform: translate(-50%, -50%);
   pointer-events: none;
@@ -1065,6 +1065,7 @@ body.dark-floor #artist-line { color: #fff; }   /* the artist line sits on the f
   animation: syrup-glow 1.2s ease-in-out infinite alternate;
 }
 #pot-back[data-syrup="ready"] .bubble { width: 8px; height: 8px; animation-duration: 0.6s; }
+#pot-back[data-syrup] #syrup.splash { animation: splash 0.5s ease-out; } /* the dip splash wins over the glow */
 @keyframes syrup-glow {
   from { filter: brightness(1); }
   to { filter: brightness(1.15); }
@@ -1110,8 +1111,8 @@ body.dark-floor #artist-line { color: #fff; }   /* the artist line sits on the f
   position: absolute;
   left: -14px;
   right: -14px;
-  top: -40px;
-  bottom: -2px;
+  top: -50px;                         /* 92px tall: still ≥80px on a small tablet */
+  bottom: 0;
 }
 .wing-glass {
   position: absolute;
