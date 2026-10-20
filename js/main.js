@@ -58,15 +58,35 @@ var Game = {
   // Fix up config.js values the game can't use, and warn about mistakes
   // (warnings show in the browser's developer console).
   checkConfig: function () {
-    // The stick has room for 1 to 5 foods.
-    CONFIG.maxOnStick = Math.max(1, Math.min(5, Math.round(CONFIG.maxOnStick) || 5));
+    // Numbers the game can use: 1 to 5 foods on a stick, 1 to 10 pot taps.
+    CONFIG.maxOnStick = Math.max(1, Math.min(5, Math.round(Number(CONFIG.maxOnStick)) || 5));
+    CONFIG.potTaps = Math.max(1, Math.min(10, Math.round(Number(CONFIG.potTaps)) || 3));
+    var warn = function (text) { console.warn("config.js: " + text); };
+    var seen = {};
+    CONFIG.starterFoods.forEach(function (food) {
+      if (!food) return;
+      if (seen[food.id]) warn("the food id \"" + food.id + "\" is used twice.");
+      seen[food.id] = true;
+      if (food.letter) warn("the starter food \"" + food.id + "\" has a letter; starter foods never get a jar.");
+    });
+    var letters = [];
     CONFIG.levels.forEach(function (level) {
       level.foods.forEach(function (food) {
+        if (!food) return;
+        if (seen[food.id]) warn("the food id \"" + food.id + "\" is used twice.");
+        seen[food.id] = true;
         if (!food.letter) {
-          console.warn("config.js: the food \"" + food.id + "\" in level \"" + level.id +
-            "\" has no letter, so it is on the shelf from the start.");
+          warn("the food \"" + food.id + "\" in level \"" + level.id + "\" has no letter, so it is on the shelf from the start.");
+        } else {
+          letters.push(String(food.letter).toLowerCase());
         }
       });
+    });
+    // Letters that sound alike at the start of an Estonian word.
+    [["i", "j"], ["b", "p"], ["d", "t"], ["g", "k"], ["z", "s"]].forEach(function (pair) {
+      if (letters.indexOf(pair[0]) !== -1 && letters.indexOf(pair[1]) !== -1) {
+        warn("the letters " + pair[0] + " and " + pair[1] + " sound alike at the start of a word; use only one of them.");
+      }
     });
   },
 
@@ -136,9 +156,8 @@ var Game = {
       });
       return;
     }
-    // The street seller's call, a welcome, the bear's wish, what to do.
-    Sound.speak([Sound.phrasePart("call"), Sound.phrasePart("welcome")]
-      .concat(Shop.wishParts(), [Sound.phrasePart("tapFood")]));
+    // The street seller's call, what to do, then the bear's wish.
+    Sound.speak([Sound.phrasePart("call"), Sound.phrasePart("tapFood")].concat(Shop.wishParts()));
   },
 
   /* -------------------------------------------------------------------
@@ -156,7 +175,8 @@ var Game = {
     if (this.screen === "pole") return Pole.instruction();
     if (Shop.stick.length === 0) return [Sound.phrasePart("tapFood")].concat(Shop.wishParts());
     if (!Shop.coated) {
-      if (Shop.syrupReady()) return [Sound.phrasePart("syrupReady")];
+      var cooked = Shop.cookSteps() > 0 && Shop.syrupReady();
+      if (cooked) return [Sound.phrasePart("syrupReady")];
       if (Shop.stick.length >= CONFIG.maxOnStick) return [Sound.phrasePart("stickFull")];
       if (Shop.syrup > 0) return [Sound.phrasePart("cook")];
       return [Sound.phrasePart("tapPot")];
@@ -253,7 +273,7 @@ var Game = {
 
     // Emoji decorations in free spots around the shop.
     var spots = [
-      { x: 205, y: 58, size: 62 }, { x: 714, y: 46, size: 54 },
+      { x: 610, y: 50, size: 54 }, { x: 714, y: 46, size: 54 },
       { x: 655, y: 245, size: 72 }, { x: -70, y: 370, size: 64 },
       { x: -70, y: 200, size: 80 }, { x: 1070, y: 260, size: 80 },
       { x: -60, y: 480, size: 70 }, { x: 1060, y: 520, size: 64 },
@@ -298,6 +318,9 @@ var Game = {
     $("#level-icon").textContent = level.icon || "⭐";
     var slots = $("#level-slots");
     slots.innerHTML = "";
+    // Keep the bar left of the stick, even when a place has many foods.
+    var count = Math.max(1, level.foods.length);
+    slots.style.setProperty("--slot", Math.min(54, Math.floor((236 - (count - 1) * 8) / count)) + "px");
     level.foods.forEach(function (food) {
       var slot = make("div", "level-slot");
       slot.dataset.id = food.id;

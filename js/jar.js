@@ -159,11 +159,7 @@ var Jar = {
     Sound.fx("sparkle");
 
     // "sss… sidrun!" (or just "sidrun!" until the sound is recorded)
-    var letterSound = Sound.letterSound(food);
-    await Promise.race([
-      Sound.speak(letterSound ? [letterSound, Sound.wordPart(food)] : [Sound.wordPart(food)]),
-      wait(6000),
-    ]);
+    await Promise.race([Sound.speak(Sound.letterAndWord(food)), wait(6000)]);
     await wait(250);
 
     // Save it, then fly the food to its place on the shelf.
@@ -200,7 +196,8 @@ var Jar = {
       await Promise.race([Game.say("star"), wait(4000)]);
     } else {
       Game.renderLevelBar(levelIndex, food.id);
-      Pole.celebrateNew(); // a new stick in the straw pole
+      // A new stick in the straw pole (the first time, she hears about it).
+      if (Pole.celebrateNew()) await Promise.race([Game.say("poleNew"), wait(4000)]);
     }
 
     if (!review && Levels.isDone(levelIndex)) {

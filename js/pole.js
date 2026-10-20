@@ -9,7 +9,8 @@
    ===================================================================== */
 
 var Pole = {
-  tapped: false, // has she tapped a stick since opening the pole?
+  tapped: false,  // has she tapped a stick since opening the pole?
+  changedAt: 0,   // when the pole last opened or closed (to ignore double taps)
 
   init: function () {
     var self = this;
@@ -45,17 +46,26 @@ var Pole = {
   },
 
   // A new stick was won: the pole wiggles and sparkles.
+  // Gives back true the very first time (then the game tells her about it).
   celebrateNew: function () {
+    var first = $("#pole-button").classList.contains("hidden");
     this.renderButton();
     var button = $("#pole-button");
-    if (button.classList.contains("hidden")) return;
+    if (button.classList.contains("hidden")) return false;
     replayClass(button, "wiggle", 500);
     var at = Stage.where(button);
     Effects.sparkles(at.x, at.y - 30, 8);
+    return first;
+  },
+
+  // A quick double tap must not open and close (or close and reopen) it.
+  tooSoon: function () {
+    return Date.now() - this.changedAt < 600;
   },
 
   open: function () {
-    if (Game.busy || Game.screen !== "shop") return;
+    if (Game.busy || Game.screen !== "shop" || this.tooSoon()) return;
+    this.changedAt = Date.now();
     Game.screen = "pole";
     Game.step++;
     this.tapped = false;
@@ -67,10 +77,12 @@ var Pole = {
   },
 
   close: function () {
-    if (Game.screen !== "pole") return;
+    if (Game.screen !== "pole" || this.tooSoon()) return;
+    this.changedAt = Date.now();
     $("#pole-screen").classList.add("hidden");
     Sound.silence();
     Game.backToShop(true);
+    Game.sayInstruction(); // back in the shop: what to do next
   },
 
   // The big pole: the sticks point out of the straw in a circle.
@@ -79,18 +91,21 @@ var Pole = {
     var box = $("#pole-sticks");
     box.innerHTML = "";
     var foods = this.foods();
-    var centerX = 500, centerY = 320, radius = 215;
+    var centerX = 500, centerY = 330;
+    // More sticks → a wider circle, so they don't overlap.
+    var radiusX = Math.max(215, Math.min(330, foods.length * 120 / (2 * Math.PI) * 1.15));
+    var radiusY = 205;
     foods.forEach(function (food, i) {
       var angle = -Math.PI / 2 + (i / foods.length) * Math.PI * 2;
-      var x = centerX + Math.cos(angle) * radius;
-      var y = centerY + Math.sin(angle) * radius;
+      var x = centerX + Math.cos(angle) * radiusX;
+      var y = centerY + Math.sin(angle) * radiusY;
 
       // The wooden stick from the straw to the food.
       var rod = make("div", "pole-rod-stick");
       rod.style.left = centerX + "px";
       rod.style.top = centerY + "px";
-      rod.style.width = radius + "px";
-      rod.style.transform = "rotate(" + (angle * 180 / Math.PI) + "deg)";
+      rod.style.width = Math.sqrt((x - centerX) * (x - centerX) + (y - centerY) * (y - centerY)) + "px";
+      rod.style.transform = "rotate(" + (Math.atan2(y - centerY, x - centerX) * 180 / Math.PI) + "deg)";
       box.appendChild(rod);
 
       // The candy-coated food with a little letter flag.
@@ -101,8 +116,11 @@ var Pole = {
       button.style.left = x + "px";
       button.style.top = y + "px";
       button.appendChild(Shop.makeStickFood(food));
+      // The letter flag sits on the outer side, away from the other sticks.
       var flag = make("span", "pole-flag", Game.showLetter(food.letter));
       flag.style.fontFamily = CONFIG.letterFont;
+      flag.style.left = 52 + Math.cos(angle) * 62 + "px";
+      flag.style.top = 52 + Math.sin(angle) * 62 + "px";
       if (String(food.letter).length > 1) flag.style.fontSize = "22px";
       button.appendChild(flag);
       onTap(button, function () { self.tapFood(food, button); });
@@ -117,8 +135,7 @@ var Pole = {
     replayClass(button, "wiggle", 500);
     replayClass(button.querySelector(".pole-flag"), "flag-glow", 900);
     Sound.fx("pop");
-    var letterSound = Sound.letterSound(food);
-    Sound.speak(letterSound ? [letterSound, Sound.wordPart(food)] : [Sound.wordPart(food)]);
+    Sound.speak(Sound.letterAndWord(food));
   },
 
   // The 👆 hand: first a stick, then (after she listened) the way back.
@@ -128,6 +145,6 @@ var Pole = {
   },
 
   instruction: function () {
-    return [Sound.phrasePart("pole")];
+    return [Sound.phrasePart(this.tapped ? "poleBack" : "pole")];
   },
 };

@@ -132,8 +132,24 @@ var Levels = {
     var level = CONFIG.levels[index];
     var count = Math.max(2, (level && level.choices) || 2);
     var others = this.lettersUpTo(index).filter(function (letter) { return letter !== food.letter; });
-    var wrong = shuffle(others).slice(0, count - 1);
+    // Letters she has already won come first (she can rule them out, and
+    // a wrong tap doesn't give away a jar she hasn't opened yet).
+    var self = this;
+    var won = others.filter(function (letter) { return self.letterWon(letter); });
+    var notYet = others.filter(function (letter) { return !self.letterWon(letter); });
+    var wrong = shuffle(won).concat(shuffle(notYet)).slice(0, count - 1);
     return shuffle([food.letter].concat(wrong));
+  },
+
+  // Has she won a food with this letter?
+  letterWon: function (letter) {
+    for (var i = 0; i < CONFIG.levels.length; i++) {
+      var foods = CONFIG.levels[i].foods;
+      for (var j = 0; j < foods.length; j++) {
+        if (foods[j].letter === letter && Progress.isUnlocked(foods[j].id)) return true;
+      }
+    }
+    return false;
   },
 };
 

@@ -212,6 +212,13 @@ var Shop = {
 
   tapPot: function () {
     if (Game.busy || Game.screen !== "shop") return;
+    if (this.coated || this.eating) {
+      // Already dipped: now it's the bear's turn.
+      replayClass($("#stick"), "wiggle", 500);
+      Sound.fx("boing");
+      Game.say("feedFirst");
+      return;
+    }
     if (!this.syrupReady()) {
       this.cook();
       return;
@@ -238,9 +245,12 @@ var Shop = {
       Sound.fx("pling");
       var potAt = Stage.where($("#syrup"));
       Effects.sparkles(potAt.x, potAt.y, 8);
-      Game.say(this.stick.length ? "syrupReady" : "tapFood");
+    }
+    if (this.stick.length === 0) {
+      // The sugar is melting, but there is nothing on the stick yet.
+      Sound.speak([Sound.phrasePart("tapFood")].concat(this.wishParts()));
     } else {
-      Game.say("cook");
+      Game.say(this.syrupReady() ? "syrupReady" : "cook");
     }
   },
 
@@ -508,10 +518,10 @@ var Shop = {
     replayClass(bubble, "pop-in", 700);
   },
 
-  // What the bear says: "maasikas, palun!"
+  // What she hears: "Karu soov on… maasikas".
   wishParts: function () {
     if (!this.wish || this.wishMet) return [];
-    return [Sound.wordPart(this.wish), Sound.phrasePart("please")];
+    return [Sound.phrasePart("wish"), Sound.wordPart(this.wish)];
   },
 
   // Tapping the bubble: the bear says its wish again.

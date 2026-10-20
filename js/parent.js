@@ -154,7 +154,7 @@ var Parent = {
     });
     items.push({ folder: "characters", item: CONFIG.customer, label: "customer (" + CONFIG.customer.word + ")" });
     CONFIG.levels.forEach(function (level) {
-      items.push({ folder: "backgrounds", item: { id: level.id, emoji: level.icon || "🖼️" }, label: "background: " + level.id });
+      items.push({ folder: "backgrounds", item: { id: level.id, emoji: level.icon || "🖼️" }, label: "background: " + (level.name || level.id) });
     });
 
     var drawn = items.filter(function (entry) { return Assets.results[entry.folder + "/" + entry.item.id]; });
@@ -232,7 +232,9 @@ var Parent = {
     var voices = Sound.voicesForLanguage();
     if (voices.length === 0) {
       row.appendChild(make("span", "note", "This device has no voice for \"" + CONFIG.language +
-        "\" (normal on iPads for Estonian). That's fine: the game uses its built-in voice and your recordings."));
+        "\" (normal on iPads for Estonian). " + (CONFIG.builtinVoice
+          ? "That's fine: the game uses its built-in voice and your recordings."
+          : "builtinVoice is off in config.js, so only your recordings can be heard.")));
     } else {
       var select = make("select");
       var auto = make("option", null, "Automatic (" + voices[0].name + ")");
@@ -306,11 +308,13 @@ var Parent = {
       });
     });
     var recorded = letters.filter(function (letter) { return Sound.found["sounds/letters/" + letter]; });
+    var untilThen = CONFIG.letterSpeech
+      ? ". Until a letter's sound is recorded, its jar says the letter's name (letterSpeech in config.js, e.g. \"" +
+        Sound.letterPart(CONFIG.levels[0].foods[0]).text + "\") if a voice can say it, otherwise it asks for the first letter of the word."
+      : ". Until a letter's sound is recorded, its jar asks for the first letter of the word instead (\"" +
+        (CONFIG.phrases.jarWord || "") + "\").";
     box.appendChild(make("p", null, "Letter sounds recorded: " + recorded.length + " of " + letters.length +
-      (recorded.length < letters.length
-        ? ". Until a letter's sound is recorded, its jar asks for the first letter of the word instead (\"" +
-          (CONFIG.phrases.jarWord || "") + "\")."
-        : ".")));
+      (recorded.length < letters.length ? untilThen : ".")));
     var missingLetters = letters.filter(function (letter) { return recorded.indexOf(letter) === -1; });
     if (missingLetters.length) {
       box.appendChild(make("p", "note", "Still to record: " + missingLetters.map(function (letter) {

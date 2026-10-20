@@ -4,7 +4,7 @@ The file name must be the food's "id" from config.js (plain English letters, low
   hawthorn.png (viirpuumari)  cherry.png (kirss)  grape.png (viinamari)  mandarin.png (mandariin)
   watermelon.png (arbuus)  strawberry.png (maasikas)  lemon.png (sidrun)  bread.png (leib)
   apple.png (õun)  peach.png (virsik)  icecream.png (jäätis)  noodles.png (nuudlid)
-  hotdog.png (hot dog)  kiwi.png (kiivi)  pear.png (pirn)  tomato.png (tomat)
+  hamburger.png (hamburger)  kiwi.png (kiivi)  pear.png (pirn)  tomato.png (tomat)
 
 .png is best (see-through background). .jpg and .jpeg also work;
 .webp needs iPadOS 14 or newer.

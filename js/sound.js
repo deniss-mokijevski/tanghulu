@@ -175,15 +175,21 @@ var Sound = {
   // The built-in Estonian clip for a part, if there is one and it still
   // says exactly the words in config.js. Gives back a clip or null.
   builtin: function (part) {
-    var index = window.BUILTIN_VOICE;
-    if (!CONFIG.builtinVoice || !index || !index.clips || !part.file || !part.text) {
-      return Promise.resolve(null);
-    }
-    var entry = index.clips[part.file.replace(/^sounds\//, "")];
-    if (!entry || sameWords(entry.text) !== sameWords(part.text)) return Promise.resolve(null);
+    var entry = this.builtinEntry(part);
+    if (!entry) return Promise.resolve(null);
     var url = "assets/sounds/builtin/" + entry.file.split("/").map(encodeURIComponent).join("/");
     if (!this.builtinClips[url]) this.builtinClips[url] = this.loadClip(url, false);
     return this.builtinClips[url];
+  },
+
+  // The entry in voice-index.js for a part, or null if there is none
+  // (or if config.js now says different words).
+  builtinEntry: function (part) {
+    var index = window.BUILTIN_VOICE;
+    if (!CONFIG.builtinVoice || !index || !index.clips || !part.file || !part.text) return null;
+    var entry = index.clips[part.file.replace(/^sounds\//, "")];
+    if (!entry || sameWords(entry.text) !== sameWords(part.text)) return null;
+    return entry;
   },
 
   // Like builtin(), but don't wait longer than a moment.
@@ -350,19 +356,33 @@ var Sound = {
   // A letter's sound: the recording "sss". Only if letterSpeech is set in
   // config.js does a voice fill in for it ("ess nagu sidrun").
   letterPart: function (food) {
+    var names = CONFIG.letterNames || {};
     return {
       file: "sounds/letters/" + food.letter,
-      text: CONFIG.letterSpeech ? fillIn(CONFIG.letterSpeech, { letter: food.letter, word: food.word }) : "",
+      text: CONFIG.letterSpeech ? fillIn(CONFIG.letterSpeech, {
+        letter: food.letter, name: names[food.letter] || food.letter, word: food.word,
+      }) : "",
     };
   },
 
   // Can the game play this letter's sound? Gives back the part, or null
   // (then the game uses the word instead: "Millise tähega algab … sidrun").
+  // A letterSpeech sentence only counts if something can say it.
   letterSound: function (food) {
     if (!food || !food.letter) return null;
     var part = this.letterPart(food);
-    if (this.found[part.file] || CONFIG.letterSpeech) return part;
+    if (this.found[part.file]) return part;
+    if (CONFIG.letterSpeech && (this.builtinEntry(part) || this.voice)) return part;
     return null;
+  },
+
+  // The letter's sound followed by the word ("sss… sidrun"), or just the
+  // word. (A letterSpeech sentence already has the word in it.)
+  letterAndWord: function (food) {
+    var letter = this.letterSound(food);
+    if (!letter) return [this.wordPart(food)];
+    if (!this.found[letter.file] && /\{word\}/.test(CONFIG.letterSpeech || "")) return [letter];
+    return [letter, this.wordPart(food)];
   },
 
   // The food's name: recording, or the voice says "strawberry".
@@ -513,9 +533,9 @@ var Sound = {
         else if (lang.split("-")[0] === short) score += 5;
         else return null;
         if (self.SILLY_VOICES.some(function (silly) { return name.indexOf(silly) === 0; })) score -= 20;
-        if (/enhanced|premium|natural|neural/.test(name)) score += 4;
-        if (/samantha|google|aria|jenny|ava|allison|karen|daniel|moira|serena|zira/.test(name)) score += 3;
-        if (voice.localService) score += 1;
+        if (/enhanced|premium|natural|neural/.test(name)) score += 3;
+        if (/samantha|google|aria|jenny|ava|allison|karen|daniel|moira|serena|zira/.test(name)) score += 2;
+        if (voice.localService) score += 5; // on the tablet itself (online voices send the words away)
         return { voice: voice, score: score };
       })
       .filter(Boolean)

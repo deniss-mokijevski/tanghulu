@@ -254,7 +254,7 @@ body.dark-floor #artist-line { color: #fff; }   /* the artist line sits on the f
 }
 #level-bar {
   position: absolute;
-  left: 320px;
+  left: 120px;                         /* left of the stick, so the sugar wing has room */
   top: 14px;
   height: 76px;
   padding: 0 14px;
@@ -269,9 +269,9 @@ body.dark-floor #artist-line { color: #fff; }   /* the artist line sits on the f
 #level-slots { display: flex; }
 #level-slots > * + * { margin-left: 8px; }
 .level-slot {
-  width: 58px;
-  height: 58px;
-  font-size: 44px;
+  width: var(--slot, 58px);            /* smaller when a place has many foods */
+  height: var(--slot, 58px);
+  font-size: calc(var(--slot, 58px) * 0.76);
   border-radius: 14px;
   background: rgba(0, 0, 0, 0.06);
   position: relative;
@@ -1105,13 +1105,13 @@ body.dark-floor #artist-line { color: #fff; }   /* the artist line sits on the f
   cursor: pointer;
   animation: pop-in 0.45s ease-out;
 }
-.sugar-wing::before {                 /* a bigger area for small fingers */
+.sugar-wing::before {                 /* a bigger area for small fingers (upwards, not over the food) */
   content: "";
   position: absolute;
   left: -14px;
   right: -14px;
-  top: -24px;
-  bottom: -22px;
+  top: -40px;
+  bottom: -2px;
 }
 .wing-glass {
   position: absolute;
@@ -1130,10 +1130,10 @@ body.dark-floor #artist-line { color: #fff; }   /* the artist line sits on the f
   to { filter: brightness(1.25); }
 }
 .wing-flyer .wing-glass { left: 0; right: 0; top: 20%; bottom: 20%; }
-.fx-glass {
+.fx-glass {                           /* see-through sugar glass, visible on light walls too */
   border-radius: 2px;
-  background: rgba(225, 242, 255, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.95);
+  background: rgba(255, 214, 140, 0.7);
+  border: 1px solid rgba(170, 110, 30, 0.6);
   box-shadow: 0 0 6px rgba(255, 255, 255, 0.9);
   -webkit-clip-path: polygon(0 0, 100% 30%, 60% 100%);
   clip-path: polygon(0 0, 100% 30%, 60% 100%);
@@ -1248,7 +1248,7 @@ body.dark-floor #artist-line { color: #fff; }   /* the artist line sits on the f
 #pole-backdrop {
   position: absolute;
   top: -400px; left: -600px; right: -600px; bottom: -400px;
-  background: rgba(70, 40, 20, 0.5);
+  background: rgba(70, 40, 20, 0.72);
   animation: fade-in 0.3s ease-out;
 }
 #pole-rod {
@@ -1291,12 +1291,11 @@ body.dark-floor #artist-line { color: #fff; }   /* the artist line sits on the f
 .pole-food .stick-food { position: absolute; left: 4px; top: 13px; }
 .pole-food .coat { opacity: 1; transform: scale(1); }
 .pole-food.wiggle { animation: wiggle 0.5s ease-in-out; }
-.pole-flag {
+.pole-flag {                           /* placed by pole.js on the outer side of the food */
   position: absolute;
-  right: -10px;
-  top: -10px;
   min-width: 46px;
   height: 46px;
+  margin: -23px 0 0 -23px;
   padding: 0 4px;
   box-sizing: border-box;
   border-radius: 23px;
@@ -1314,10 +1313,10 @@ body.dark-floor #artist-line { color: #fff; }   /* the artist line sits on the f
   40% { transform: scale(1.35); box-shadow: 0 0 22px 10px rgba(255, 220, 80, 0.9); }
   100% { transform: scale(1); box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25); }
 }
-#pole-close {
+#pole-close {                         /* top right, away from the pole button in the shop */
   position: absolute;
-  left: 872px;
-  top: 522px;
+  left: 878px;
+  top: 92px;
   width: 104px;
   height: 104px;
   border-radius: 50%;

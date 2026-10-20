@@ -7,8 +7,8 @@
    connects to the internet; this script does, once, on your computer.
 
    How to run it (needs Node.js 18 or newer, https://nodejs.org):
-       node tools/make-voice.js            (voice "mari")
-       node tools/make-voice.js vesta      (another voice)
+       node tools/make-voice.js            (keeps the voice the clips already have: Vesta)
+       node tools/make-voice.js mari       (another voice: every clip is made again)
 
    What it does:
      1. reads every sentence and food word from config.js,
@@ -34,7 +34,7 @@ const { execFileSync } = require("child_process");
 const ROOT = path.join(__dirname, "..");
 const OUT = path.join(ROOT, "assets", "sounds", "builtin");
 const API = "https://api.tartunlp.ai/text-to-speech/v2";
-const SPEAKER = (process.argv[2] || "mari").toLowerCase();
+let SPEAKER = (process.argv[2] || "").toLowerCase(); // chosen in main(): this, or the voice already used
 const SPEED = 0.9; // a little slower than normal, for a child
 const RECIPE = "sentence-1"; // change this to make every clip again
 
@@ -212,9 +212,17 @@ function save(name, audio, useMp3) {
 // 3. Make every clip that is missing or out of date, then write the index
 // ---------------------------------------------------------------------
 async function main() {
-  const CONFIG = readConfig();
+  let CONFIG;
+  try {
+    CONFIG = readConfig();
+  } catch (error) {
+    console.error("config.js has a typo, so it can't be read (often a missing comma or quote).");
+    console.error("  " + error.message);
+    process.exit(1);
+  }
   const lines = linesToSay(CONFIG);
   const old = readOldIndex();
+  if (!SPEAKER) SPEAKER = old.speaker || "vesta";
   const useMp3 = hasFfmpeg();
   const clips = {};
   let made = 0, kept = 0;
@@ -249,7 +257,8 @@ async function main() {
   const index = {
     speaker: SPEAKER,
     recipe: RECIPE,
-    credit: "Kõnesüntees: Neurokõne (TartuNLP, Tartu Ülikool), hääl " + SPEAKER + ". https://neurokone.ee",
+    credit: "Kõnesüntees: Neurokõne (TartuNLP, Tartu Ülikool), hääl " +
+      SPEAKER.charAt(0).toUpperCase() + SPEAKER.slice(1) + ". https://neurokone.ee",
     clips,
   };
   fs.writeFileSync(path.join(OUT, "voice-index.js"),

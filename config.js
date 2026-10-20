@@ -67,9 +67,16 @@ var CONFIG = {
   // SOUND ("sss", "mmm"), and a computer voice can only say names.
   // So until you record the letter sounds, the jar asks for the first
   // letter of the word instead: "Millise tähega algab see sõna? … sidrun".
-  // If you prefer the letter names, write e.g. "{letter} nagu {word}"
-  // ("ess nagu sidrun") here; leave "" for the first-letter question.
+  // If you prefer the letter names, write "{name} nagu {word}" here
+  // ("ess nagu sidrun"; the names are in letterNames below) and then run
+  // node tools/make-voice.js once so the game has a voice for them.
+  // Leave "" for the first-letter question.
   letterSpeech: "",
+  letterNames: {                  // Estonian letter names, only used by letterSpeech
+    a: "aa", b: "bee", d: "dee", e: "ee", f: "eff", g: "gee", h: "haa", i: "ii",
+    j: "jott", k: "kaa", l: "ell", m: "emm", n: "enn", o: "oo", p: "pee", r: "err",
+    s: "ess", t: "tee", u: "uu", v: "vee", "õ": "õõ", "ä": "ää", "ö": "öö", "ü": "üü",
+  },
 
   // ---------------------------------------------------------------
   // GAME RULES (numbers you can tweak)
@@ -122,6 +129,7 @@ var CONFIG = {
   // long) to hard ones (k, p, t: short sounds), as Estonian teachers do.
   //
   //   id          = background drawing: assets/backgrounds/<id>.png
+  //   name        = the place's name (printed on the drawing sheets)
   //   say         = spoken when she arrives
   //                 (recording: assets/sounds/voice/place-<id>.mp3)
   //   icon        = small picture for the place (top of the screen)
@@ -135,15 +143,18 @@ var CONFIG = {
   //                            a food without a letter is on the shelf from the start
   //                   sour: true = the bear puckers when eating it
   //
-  // Wrong-answer letters are taken from this place and earlier places.
-  // Use each letter only once in the whole game, and never put both
-  // "i" and "j" in the game: in Estonian they sound alike at the start.
+  // Wrong-answer letters are taken from this place and earlier places
+  // (letters she has already won first).
+  // Use each letter only once in the whole game. Don't use both of
+  // i and j, b and p, d and t, g and k, or z and s: at the start of an
+  // Estonian word they sound alike, so she couldn't hear the difference.
   // The shelf fits about 16 foods at full size; more foods make the
   // buttons smaller.
   // ---------------------------------------------------------------
   levels: [
     {
-      id: "kitchen",                       // Köök
+      id: "kitchen",
+      name: "köök",
       say: "Tere tulemast kööki!",
       icon: "🍳",
       choices: 2,
@@ -157,7 +168,8 @@ var CONFIG = {
       ],
     },
     {
-      id: "beach",                         // Rand
+      id: "beach",
+      name: "rand",
       say: "Tere tulemast randa!",
       icon: "🏖️",
       choices: 3,
@@ -171,14 +183,15 @@ var CONFIG = {
       ],
     },
     {
-      id: "space",                         // Kosmos
+      id: "space",
+      name: "kosmos",
       say: "Tere tulemast kosmosesse!",
       icon: "🚀",
       choices: 4,
       colors: { wall: "#2b2d6e", floor: "#5b4b9a" },
       decorations: ["🌍", "🌙", "⭐", "🛸", "🚀", "☄️"],
       foods: [
-        { id: "hotdog", emoji: "🌭", word: "hot dog", letter: "h" },
+        { id: "hamburger", emoji: "🍔", word: "hamburger", letter: "h" },
         { id: "kiwi",   emoji: "🥝", word: "kiivi",   letter: "k" },
         { id: "pear",   emoji: "🍐", word: "pirn",    letter: "p" },
         { id: "tomato", emoji: "🍅", word: "tomat",   letter: "t" },
@@ -206,8 +219,8 @@ var CONFIG = {
     dipFirst:   "Kõigepealt kasta pulk siirupisse! Puuduta potti.",
     feedFirst:  "Kõigepealt anna karule süüa! Puuduta pulka.",
     keepGoing:  "Puuduta pulka veel!",
-    please:     "palun!",                                    // the bear's wish: "maasikas, palun!"
-    wishYes:    "Just seda ma tahtsingi!",
+    wish:       "Karu soov on",                              // then the food's word: "… maasikas"
+    wishYes:    "Karu sai just selle, mida ta tahtis!",
     yay:        "Hurraa! Karule maitseb väga!",
     jar:        "Salapurk! Milline täht nii kõlab?",         // when the letter sound is recorded
     jarWord:    "Salapurk! Millise tähega algab see sõna?",  // when it is not (then the word follows)
@@ -217,6 +230,8 @@ var CONFIG = {
     star:       "Said kuldtähe!",
     again:      "Teeme veel ühe kommipulga!",
     pole:       "Siin on kõik sinu kommipulgad! Puuduta pulka ja kuula!",
+    poleBack:   "Kui tahad tagasi poodi, puuduta risti!",
+    poleNew:    "Uus kommipulk läks õlgedesse!",            // the first time the straw pole appears
     newPlace:   "Sa tegid kõik purgid lahti! Lähme nüüd uude kohta!",
     allDone:    "Vau! Sa tunned juba nii palju tähti! Sa oled tõeline kommistaar!",
     turnTablet: "Palun keera tahvelarvuti külili!",

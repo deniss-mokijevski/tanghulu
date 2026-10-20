@@ -169,7 +169,7 @@ shown instead, with a small 🖍️ crayon badge.
    | Starter foods | `assets/foods/` | `hawthorn.png` (viirpuumari), `cherry.png` (kirss), `grape.png` (viinamari), `mandarin.png` (mandariin) |
    | Kitchen foods | `assets/foods/` | `watermelon.png` (arbuus), `strawberry.png` (maasikas), `lemon.png` (sidrun), `bread.png` (leib) |
    | Beach foods | `assets/foods/` | `apple.png` (õun), `peach.png` (virsik), `icecream.png` (jäätis), `noodles.png` (nuudlid) |
-   | Space foods | `assets/foods/` | `hotdog.png` (hot dog), `kiwi.png` (kiivi), `pear.png` (pirn), `tomato.png` (tomat) |
+   | Space foods | `assets/foods/` | `hamburger.png` (hamburger), `kiwi.png` (kiivi), `pear.png` (pirn), `tomato.png` (tomat) |
    | The bear | `assets/characters/` | `bear.png` |
    | Places | `assets/backgrounds/` | `kitchen.png`, `beach.png`, `space.png` (wide pictures) |
 
@@ -218,7 +218,8 @@ and try again.
 **Adding a food:** copy a food line inside a level, give it a new `id` (this is also its
 file name, plain English letters), an `emoji`, a `word` and a `letter`. The letter must be the
 first letter **and** first sound of the Estonian word, and each letter should appear only once
-in the whole game. Don't use both `i` and `j`: at the start of a word they sound alike.
+in the whole game. Don't use both of `i` and `j`, `b` and `p`, `d` and `t`, `g` and `k`, or
+`z` and `s`: at the start of an Estonian word they sound alike (banaan starts like pirn).
 A place can have more or fewer than 4 foods. A food without a `letter` is simply on the shelf
 from the start.
 **Adding a place:** copy a whole level block `{ … },` and change it.
@@ -235,14 +236,16 @@ tool in section 6.
 
 For every sentence and word, the game tries, in this order:
 
-1. **Your recording** (`assets/sounds/…`, see section 8). Always wins.
+1. **Your recording** (`assets/sounds/…`, see section 8). Always wins (once the page has found
+   it, which takes a moment after opening the game).
 2. **The built-in Estonian voice**: clips in `assets/sounds/builtin/`, made with
-   Neurokõne, the free Estonian speech synthesis of the University of Tartu (voice "Mari").
+   Neurokõne, the free Estonian speech synthesis of the University of Tartu (voice "Vesta").
    A clip is only used while its words still match `config.js`.
 3. **The tablet's own voice**, but **only if it speaks Estonian**. iPads have no Estonian
    voice at all; Android tablets have one if Google's speech engine with Estonian is installed;
-   Edge on Windows has one. With no Estonian voice the game stays quiet rather than read
-   Estonian with an English voice.
+   Edge on Windows has online ones (they send the words to Microsoft; voices on the device itself
+   are preferred). With no Estonian voice the game stays quiet rather than read Estonian with an
+   English voice.
 
 **Letter sounds are special.** In Estonian a letter's *name* ("ess", "emm") is not its
 *sound* ("sss", "mmm"), and a computer voice can only say names. So:
@@ -251,7 +254,10 @@ For every sentence and word, the game tries, in this order:
 - Until then, its jar says the word and asks for its first letter:
   *"Salapurk! Millise tähega algab see sõna? … sidrun"*. That's the same skill, and it's how
   Estonian teachers practise first sounds.
-- If you prefer the letter names, set `letterSpeech: "{letter} nagu {word}"` in `config.js`.
+- If you prefer the letter names, set `letterSpeech: "{name} nagu {word}"` in `config.js`
+  ("ess nagu sidrun"; `{name}` comes from `letterNames`) and run `node tools/make-voice.js` once,
+  so the built-in voice can say them. Without a voice for them, the jar keeps asking for the
+  first letter of the word.
 
 **Making new clips** (only needed after you change words in `config.js` and don't want to record them):
 
@@ -261,12 +267,18 @@ node tools/make-voice.js
 
 This needs [Node.js](https://nodejs.org) (version 18 or newer) and an internet connection,
 **once**, on your computer. It reads `config.js`, asks Neurokõne for every new or changed line,
-trims the silence and updates `assets/sounds/builtin/`. If `ffmpeg` is installed the clips are
-small `.mp3` files, otherwise `.wav`. You can pick another voice: `node tools/make-voice.js vesta`
-(other voices you may use: `albert`, `kalev`, `meelis`, `lee` (a girl's voice)). Please don't
-use `indrek`, `kylli`, `liivika` or `tambet`: they are actors' voices with stricter rules.
+trims the silence and updates `assets/sounds/builtin/`. Only new or changed lines are made;
+the others are kept, in the same voice. If `ffmpeg` is installed the clips are small `.mp3`
+files, otherwise `.wav`. To use another voice for everything: `node tools/make-voice.js mari`
+(voices you may use: `vesta`, `mari`, `albert`, `kalev`, `meelis`, `lee` (a girl's voice)).
+Please don't use `indrek`, `kylli`, `liivika` or `tambet`: they are actors' voices with
+stricter rules.
 
-Credit: *Kõnesüntees: Neurokõne (TartuNLP, Tartu Ülikool), hääl Mari. https://neurokone.ee*
+The built-in clips were checked with a speech recognizer (Whisper), which heard almost every
+line back exactly. It was unsure about *nuudlid*, *sidrun* and *kööki*, probably its own
+mistake; have a listen, and record those words yourself if they sound wrong.
+
+Credit: *Kõnesüntees: Neurokõne (TartuNLP, Tartu Ülikool), hääl Vesta. https://neurokone.ee*
 If you publish the game widely, TartuNLP asks people who build on their service to let them
 know (ping@tartunlp.ai).
 
@@ -293,10 +305,10 @@ into a thin, glassy shell. The game borrows these bits from the real thing:
 - **The straw pole (草把子):** sellers carried a pole with a fat straw bundle, the sticks pushed in
   all around. Every food she wins gets a stick in the straw pole (bottom right of the shop),
   with its letter on a little flag. Tap the pole, then a stick, to hear its sound and word again:
-  letter practice whenever she likes.
+  letter practice whenever she likes. The ✕ at the top right goes back to the shop.
 - **Customers' wishes**, from tanghulu shop games: the bear shows a picture of the food it would
-  like ("maasikas, palun!"). Putting it on the stick makes the bear extra happy, but every stick
-  is fine. Turn it off with `bearWishes: false`.
+  like, and she hears "Karu soov on… maasikas". Putting it on the stick makes the bear extra happy,
+  but every stick is fine. Turn it off with `bearWishes: false`.
 
 ---
 
@@ -353,7 +365,7 @@ in a different way; the game looks for both ways, so it should still work.
 | `peach.mp3` | "virsik" |
 | `icecream.mp3` | "jäätis" |
 | `noodles.mp3` | "nuudlid" |
-| `hotdog.mp3` | "hot dog" |
+| `hamburger.mp3` | "hamburger" |
 | `kiwi.mp3` | "kiivi" |
 | `pear.mp3` | "pirn" |
 | `tomato.mp3` | "tomat" |
@@ -373,8 +385,8 @@ in a different way; the game looks for both ways, so it should still work.
 | `dipFirst.mp3` | "Kõigepealt kasta pulk siirupisse! Puuduta potti." |
 | `feedFirst.mp3` | "Kõigepealt anna karule süüa! Puuduta pulka." |
 | `keepGoing.mp3` | "Puuduta pulka veel!" |
-| `please.mp3` | "palun!" (the bear's wish: the food's word, then this) |
-| `wishYes.mp3` | "Just seda ma tahtsingi!" (the bear got its wish) |
+| `wish.mp3` | "Karu soov on…" (the bear's wish; then the food's word) |
+| `wishYes.mp3` | "Karu sai just selle, mida ta tahtis!" (the bear got its wish) |
 | `yay.mp3` | "Hurraa! Karule maitseb väga!" (the cheer after every finished stick) |
 | `jar.mp3` | "Salapurk! Milline täht nii kõlab?" (jar, when the letter sound is recorded) |
 | `jarWord.mp3` | "Salapurk! Millise tähega algab see sõna?" (jar, until it is) |
@@ -384,6 +396,8 @@ in a different way; the game looks for both ways, so it should still work.
 | `star.mp3` | "Said kuldtähe!" |
 | `again.mp3` | "Teeme veel ühe kommipulga!" |
 | `pole.mp3` | "Siin on kõik sinu kommipulgad! Puuduta pulka ja kuula!" (the straw pole) |
+| `poleBack.mp3` | "Kui tahad tagasi poodi, puuduta risti!" (on the straw pole, after listening) |
+| `poleNew.mp3` | "Uus kommipulk läks õlgedesse!" (the first time the straw pole appears) |
 | `newPlace.mp3` | "Sa tegid kõik purgid lahti! Lähme nüüd uude kohta!" |
 | `allDone.mp3` | "Vau! Sa tunned juba nii palju tähti! Sa oled tõeline kommistaar!" |
 | `turnTablet.mp3` | "Palun keera tahvelarvuti külili!" (when the tablet is held upright) |

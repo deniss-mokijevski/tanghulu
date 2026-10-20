@@ -124,7 +124,7 @@
         var c = CONFIG.customer;
         list.push({ emoji: c.emoji, word: c.word, file: "assets/characters/" + c.id + ".png", wide: false });
         CONFIG.levels.forEach(function (level) {
-          list.push({ emoji: level.icon || "🖼️", word: level.id, file: "assets/backgrounds/" + level.id + ".png", wide: true });
+          list.push({ emoji: level.icon || "🖼️", word: level.name || level.id, file: "assets/backgrounds/" + level.id + ".png", wide: true });
         });
       }
       return list;

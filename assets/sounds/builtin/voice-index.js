@@ -1,10 +1,10 @@
 /* Made by tools/make-voice.js — please don't edit by hand.
-   The game's built-in Estonian voice. Kõnesüntees: Neurokõne (TartuNLP, Tartu Ülikool), hääl vesta. https://neurokone.ee
+   The game's built-in Estonian voice. Kõnesüntees: Neurokõne (TartuNLP, Tartu Ülikool), hääl Vesta. https://neurokone.ee
    A clip is only used while its words still match config.js. */
 var BUILTIN_VOICE = {
   "speaker": "vesta",
   "recipe": "sentence-1",
-  "credit": "Kõnesüntees: Neurokõne (TartuNLP, Tartu Ülikool), hääl vesta. https://neurokone.ee",
+  "credit": "Kõnesüntees: Neurokõne (TartuNLP, Tartu Ülikool), hääl Vesta. https://neurokone.ee",
   "clips": {
     "voice/call": {
       "text": "Kommipulgad! Värskelt kastetud!",
@@ -61,15 +61,15 @@ var BUILTIN_VOICE = {
       "file": "voice/keepGoing.mp3",
       "seconds": 1.68
     },
-    "voice/please": {
-      "text": "palun!",
-      "file": "voice/please.mp3",
-      "seconds": 0.6
+    "voice/wish": {
+      "text": "Karu soov on",
+      "file": "voice/wish.mp3",
+      "seconds": 1.2
     },
     "voice/wishYes": {
-      "text": "Just seda ma tahtsingi!",
+      "text": "Karu sai just selle, mida ta tahtis!",
       "file": "voice/wishYes.mp3",
-      "seconds": 1.8
+      "seconds": 2.5
     },
     "voice/yay": {
       "text": "Hurraa! Karule maitseb väga!",
@@ -115,6 +115,16 @@ var BUILTIN_VOICE = {
       "text": "Siin on kõik sinu kommipulgad! Puuduta pulka ja kuula!",
       "file": "voice/pole.mp3",
       "seconds": 4.64
+    },
+    "voice/poleBack": {
+      "text": "Kui tahad tagasi poodi, puuduta risti!",
+      "file": "voice/poleBack.mp3",
+      "seconds": 3.04
+    },
+    "voice/poleNew": {
+      "text": "Uus kommipulk läks õlgedesse!",
+      "file": "voice/poleNew.mp3",
+      "seconds": 2.5
     },
     "voice/newPlace": {
       "text": "Sa tegid kõik purgid lahti! Lähme nüüd uude kohta!",
@@ -206,10 +216,10 @@ var BUILTIN_VOICE = {
       "file": "words/noodles.mp3",
       "seconds": 0.83
     },
-    "words/hotdog": {
-      "text": "hot dog",
-      "file": "words/hotdog.mp3",
-      "seconds": 0.95
+    "words/hamburger": {
+      "text": "hamburger",
+      "file": "words/hamburger.mp3",
+      "seconds": 1.04
     },
     "words/kiwi": {
       "text": "kiivi",
