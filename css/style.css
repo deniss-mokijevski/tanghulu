@@ -268,6 +268,8 @@ body.dark-floor #artist-line { color: #fff; }   /* the artist line sits on the f
 #level-icon { font-family: var(--emoji-font); font-size: 46px; line-height: 1; margin-right: 6px; }
 #level-slots { display: flex; }
 #level-slots > * + * { margin-left: 8px; }
+#level-slots.two-rows { flex-wrap: wrap; }       /* many foods: two rows */
+#level-slots.two-rows > * { margin: 2px 4px; }
 .level-slot {
   width: var(--slot, 58px);            /* smaller when a place has many foods */
   height: var(--slot, 58px);
@@ -1246,6 +1248,7 @@ body.dark-floor #artist-line { color: #fff; }   /* the artist line sits on the f
   height: 640px;
   z-index: 20;
 }
+#pole-screen.closing { opacity: 0; transition: opacity 0.25s; } /* still catches taps */
 #pole-backdrop {
   position: absolute;
   top: -400px; left: -600px; right: -600px; bottom: -400px;

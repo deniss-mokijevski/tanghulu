@@ -268,7 +268,7 @@ var Parent = {
 
     // Where every spoken line comes from.
     var lines = Sound.allParts();
-    var counts = { recording: 0, builtin: 0, tablet: 0, silent: 0 };
+    var counts = { recording: 0, builtin: 0, tablet: 0, silent: 0, wordQuestion: 0 };
     var silent = [];
     var checks = lines.map(function (part) {
       if (Sound.found[part.file]) return Promise.resolve("recording");
@@ -286,12 +286,17 @@ var Parent = {
     box.appendChild(details);
     Promise.all(checks).then(function (sources) {
       sources.forEach(function (source, i) {
+        // A letter name nothing can say is never silent: the jar asks for
+        // the first letter of the word instead.
+        if (source === "silent" && lines[i].file.indexOf("sounds/letters/") === 0) source = "wordQuestion";
         counts[source]++;
         if (source === "silent") silent.push(lines[i]);
       });
       summary.textContent = "Spoken lines: " + counts.recording + " your recordings, " +
         counts.builtin + " built-in voice, " + counts.tablet + " tablet voice, " +
-        counts.silent + " silent (no voice at all).";
+        counts.silent + " silent (no voice at all)" +
+        (counts.wordQuestion ? ", " + counts.wordQuestion + " letter names nothing can say yet " +
+          "(those jars ask for the first letter of the word instead)." : ".");
       if (silent.length === 0) {
         list.appendChild(make("li", null, "None — every line can be heard. 🎉"));
       }
@@ -308,9 +313,11 @@ var Parent = {
       });
     });
     var recorded = letters.filter(function (letter) { return Sound.found["sounds/letters/" + letter]; });
+    var sample = allFoods().filter(function (food) { return food.letter; })[0];
     var untilThen = CONFIG.letterSpeech
       ? ". Until a letter's sound is recorded, its jar says the letter's name (letterSpeech in config.js, e.g. \"" +
-        Sound.letterPart(CONFIG.levels[0].foods[0]).text + "\") if a voice can say it, otherwise it asks for the first letter of the word."
+        (sample ? Sound.letterPart(sample).text : CONFIG.letterSpeech) +
+        "\") if a voice can say it, otherwise it asks for the first letter of the word."
       : ". Until a letter's sound is recorded, its jar asks for the first letter of the word instead (\"" +
         (CONFIG.phrases.jarWord || "") + "\").";
     box.appendChild(make("p", null, "Letter sounds recorded: " + recorded.length + " of " + letters.length +

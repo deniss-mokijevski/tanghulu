@@ -9,8 +9,9 @@
    ===================================================================== */
 
 var Pole = {
-  tapped: false,  // has she tapped a stick since opening the pole?
-  changedAt: 0,   // when the pole last opened or closed (to ignore double taps)
+  tapped: false,     // has she tapped a stick since opening the pole?
+  changedAt: 0,      // when the pole last opened or closed (to ignore double taps)
+  closeTimer: null,
 
   init: function () {
     var self = this;
@@ -70,7 +71,8 @@ var Pole = {
     Game.step++;
     this.tapped = false;
     this.render();
-    $("#pole-screen").classList.remove("hidden");
+    clearTimeout(this.closeTimer);
+    $("#pole-screen").classList.remove("hidden", "closing");
     Sound.fx("whoosh");
     Hint.restart();
     Sound.speak([Sound.phrasePart("pole")]);
@@ -79,10 +81,19 @@ var Pole = {
   close: function () {
     if (Game.screen !== "pole" || this.tooSoon()) return;
     this.changedAt = Date.now();
-    $("#pole-screen").classList.add("hidden");
+    // Fade out, but keep catching taps for a moment: the second tap of a
+    // double tap on ✕ must not land on the bear underneath.
+    var screen = $("#pole-screen");
+    screen.classList.add("closing");
+    clearTimeout(this.closeTimer);
+    this.closeTimer = setTimeout(function () {
+      screen.classList.add("hidden");
+      screen.classList.remove("closing");
+    }, 500);
     Sound.silence();
     Game.backToShop(true);
-    Game.sayInstruction(); // back in the shop: what to do next
+    Hint.spokenStep = Game.step; // said right now, so the idle hint only shows the hand
+    Game.sayInstruction();       // back in the shop: what to do next
   },
 
   // The big pole: the sticks point out of the straw in a circle.

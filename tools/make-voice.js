@@ -66,7 +66,9 @@ function linesToSay(CONFIG) {
   foods.forEach((food) => add("words/" + food.id, food.word));
   if (CONFIG.letterSpeech) {
     CONFIG.levels.forEach((level) => level.foods.forEach((food) => {
-      if (food.letter) add("letters/" + food.letter, fillIn(CONFIG.letterSpeech, { letter: food.letter, word: food.word }));
+      // The same values as Sound.letterPart() in js/sound.js, so the texts match.
+      const name = (CONFIG.letterNames || {})[food.letter] || food.letter;
+      if (food.letter) add("letters/" + food.letter, fillIn(CONFIG.letterSpeech, { letter: food.letter, name, word: food.word }));
     }));
   }
   return lines;
@@ -200,8 +202,14 @@ function save(name, audio, useMp3) {
   if (useMp3) {
     const temp = path.join(os.tmpdir(), "make-voice-" + process.pid + ".wav");
     fs.writeFileSync(temp, wav);
-    execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-i", temp, "-ac", "1", "-b:a", "64k", target]);
-    fs.unlinkSync(temp);
+    try {
+      execFileSync("ffmpeg", ["-y", "-nostdin", "-loglevel", "error", "-i", temp, "-ac", "1", "-b:a", "64k", target]);
+    } catch (error) {
+      throw new Error("ffmpeg could not make an MP3 (" + error.message + "). " +
+        "Uninstall ffmpeg to get WAV clips instead, or reinstall it.");
+    } finally {
+      fs.unlinkSync(temp);
+    }
   } else {
     fs.writeFileSync(target, wav);
   }
@@ -212,15 +220,15 @@ function save(name, audio, useMp3) {
 // 3. Make every clip that is missing or out of date, then write the index
 // ---------------------------------------------------------------------
 async function main() {
-  let CONFIG;
+  let CONFIG, lines;
   try {
     CONFIG = readConfig();
+    lines = linesToSay(CONFIG);
   } catch (error) {
     console.error("config.js has a typo, so it can't be read (often a missing comma or quote).");
     console.error("  " + error.message);
     process.exit(1);
   }
-  const lines = linesToSay(CONFIG);
   const old = readOldIndex();
   if (!SPEAKER) SPEAKER = old.speaker || "vesta";
   const useMp3 = hasFfmpeg();
@@ -271,6 +279,8 @@ async function main() {
 
 main().catch((error) => {
   console.error("\nSomething went wrong: " + error.message);
-  console.error("Check the internet connection and try again.");
+  if (/fetch failed|HTTP \d|ENOTFOUND|ECONN|ETIMEDOUT|EAI_AGAIN|network/i.test(error.message)) {
+    console.error("Check the internet connection and try again.");
+  }
   process.exit(1);
 });

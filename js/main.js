@@ -60,8 +60,13 @@ var Game = {
   checkConfig: function () {
     // Numbers the game can use: 1 to 5 foods on a stick, 1 to 10 pot taps.
     CONFIG.maxOnStick = Math.max(1, Math.min(5, Math.round(Number(CONFIG.maxOnStick)) || 5));
-    CONFIG.potTaps = Math.max(1, Math.min(10, Math.round(Number(CONFIG.potTaps)) || 3));
     var warn = function (text) { console.warn("config.js: " + text); };
+    var taps = Math.round(Number(CONFIG.potTaps));
+    if (CONFIG.potTaps == null || isNaN(taps)) {
+      if (CONFIG.potTaps != null) warn("potTaps should be a number like 3.");
+      taps = 3;
+    }
+    CONFIG.potTaps = Math.max(1, Math.min(10, taps));
     var seen = {};
     CONFIG.starterFoods.forEach(function (food) {
       if (!food) return;
@@ -176,7 +181,9 @@ var Game = {
     if (Shop.stick.length === 0) return [Sound.phrasePart("tapFood")].concat(Shop.wishParts());
     if (!Shop.coated) {
       var cooked = Shop.cookSteps() > 0 && Shop.syrupReady();
-      if (cooked) return [Sound.phrasePart("syrupReady")];
+      // (With potTaps 1 the syrup is always golden: once the hand points at the pot.)
+      var alwaysReady = Shop.cookSteps() === 0 && Shop.stick.length >= Math.min(3, CONFIG.maxOnStick);
+      if (cooked || alwaysReady) return [Sound.phrasePart("syrupReady")];
       if (Shop.stick.length >= CONFIG.maxOnStick) return [Sound.phrasePart("stickFull")];
       if (Shop.syrup > 0) return [Sound.phrasePart("cook")];
       return [Sound.phrasePart("tapPot")];
@@ -318,9 +325,16 @@ var Game = {
     $("#level-icon").textContent = level.icon || "⭐";
     var slots = $("#level-slots");
     slots.innerHTML = "";
-    // Keep the bar left of the stick, even when a place has many foods.
+    // Keep the bar left of the stick (236px for the slots), even when a
+    // place has many foods: then two rows of slots, so they stay big enough.
     var count = Math.max(1, level.foods.length);
-    slots.style.setProperty("--slot", Math.min(54, Math.floor((236 - (count - 1) * 8) / count)) + "px");
+    var oneRow = Math.min(54, Math.floor((236 - (count - 1) * 8) / count));
+    var perRow = Math.ceil(count / 2);
+    var twoRows = Math.min(32, Math.floor(236 / perRow) - 8);
+    var size = Math.max(oneRow, twoRows);
+    slots.classList.toggle("two-rows", twoRows > oneRow);
+    slots.style.width = twoRows > oneRow ? perRow * (size + 8) + "px" : "";
+    slots.style.setProperty("--slot", size + "px");
     level.foods.forEach(function (food) {
       var slot = make("div", "level-slot");
       slot.dataset.id = food.id;

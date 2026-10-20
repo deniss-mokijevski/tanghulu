@@ -14,8 +14,8 @@ this README and the parent screen are in English for the grown-ups.
 - **Her own art:** every food, the bear and the backgrounds start as placeholders. Drop her drawings into the `assets` folder and they replace the placeholders. No code changes needed.
 
 It is plain HTML, CSS and JavaScript: no installing, no build step, no internet
-needed. Progress is saved only on the device (in the browser), and the game never
-connects to the internet.
+needed. Progress is saved only on the device (in the browser), and the game itself never
+connects to the internet (only a tablet's own online voice might, see section 6).
 
 ---
 
@@ -294,7 +294,7 @@ into a thin, glassy shell. The game borrows these bits from the real thing:
   the first starter food, sweet and then a little sour (the bear puckers).
 - **Cooking the sugar:** sellers watch the syrup in a copper pot: big bubbles, then small fine
   bubbles and a golden color mean it's ready. Here she taps the pot: the fire lights, the syrup
-  bubbles, turns golden, and *then* the stick dips in (`potTaps` in `config.js`; 1 = dip at once).
+  bubbles, turns golden, and *then* the stick dips in (`potTaps` in `config.js`, 1–10; 1 = dip at once).
 - **The sugar wing (糖风):** sellers flick the stick on a stone slab, which leaves a thin glassy
   sheet of sugar on the tip. After dipping, a sugar wing sits on top of the stick: tap it and it
   snaps off for the bear. Just for fun, it's never needed.
@@ -397,7 +397,7 @@ in a different way; the game looks for both ways, so it should still work.
 | `again.mp3` | "Teeme veel ühe kommipulga!" |
 | `pole.mp3` | "Siin on kõik sinu kommipulgad! Puuduta pulka ja kuula!" (the straw pole) |
 | `poleBack.mp3` | "Kui tahad tagasi poodi, puuduta risti!" (on the straw pole, after listening) |
-| `poleNew.mp3` | "Uus kommipulk läks õlgedesse!" (the first time the straw pole appears) |
+| `poleNew.mp3` | "Uus kommipulk läks õlgedesse! Puuduta õlgi ja kuula!" (the first time the straw pole appears) |
 | `newPlace.mp3` | "Sa tegid kõik purgid lahti! Lähme nüüd uude kohta!" |
 | `allDone.mp3` | "Vau! Sa tunned juba nii palju tähti! Sa oled tõeline kommistaar!" |
 | `turnTablet.mp3` | "Palun keera tahvelarvuti külili!" (when the tablet is held upright) |

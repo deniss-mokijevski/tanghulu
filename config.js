@@ -82,7 +82,7 @@ var CONFIG = {
   // GAME RULES (numbers you can tweak)
   // ---------------------------------------------------------------
   maxOnStick: 5,                  // how many foods fit on one stick (1 to 5)
-  potTaps: 3,                     // taps on the pot: the sugar melts, turns golden, then the dip
+  potTaps: 3,                     // taps on the pot (1–10): the sugar melts, turns golden, then the dip
                                   // (1 = dip straight away)
   bearWishes: true,               // the bear shows a picture of the food it would like (true / false)
   idleHintSeconds: 5,             // show the pointing hand 👆 after this many quiet seconds
@@ -231,7 +231,7 @@ var CONFIG = {
     again:      "Teeme veel ühe kommipulga!",
     pole:       "Siin on kõik sinu kommipulgad! Puuduta pulka ja kuula!",
     poleBack:   "Kui tahad tagasi poodi, puuduta risti!",
-    poleNew:    "Uus kommipulk läks õlgedesse!",            // the first time the straw pole appears
+    poleNew:    "Uus kommipulk läks õlgedesse! Puuduta õlgi ja kuula!", // the first time the straw pole appears
     newPlace:   "Sa tegid kõik purgid lahti! Lähme nüüd uude kohta!",
     allDone:    "Vau! Sa tunned juba nii palju tähti! Sa oled tõeline kommistaar!",
     turnTablet: "Palun keera tahvelarvuti külili!",

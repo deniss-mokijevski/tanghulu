@@ -143,7 +143,7 @@ var Shop = {
     if (this.coated || this.eating) {
       replayClass(button, "wiggle", 500);
       Sound.fx("boing");
-      Game.say("feedFirst");
+      if (!Sound.speaking) Game.say("feedFirst"); // don't cut off the bear's thanks
       return;
     }
     // The stick is full.
@@ -216,7 +216,7 @@ var Shop = {
       // Already dipped: now it's the bear's turn.
       replayClass($("#stick"), "wiggle", 500);
       Sound.fx("boing");
-      Game.say("feedFirst");
+      if (!Sound.speaking) Game.say("feedFirst"); // don't cut off the bear's thanks
       return;
     }
     if (!this.syrupReady()) {

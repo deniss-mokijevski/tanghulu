@@ -196,8 +196,13 @@ var Jar = {
       await Promise.race([Game.say("star"), wait(4000)]);
     } else {
       Game.renderLevelBar(levelIndex, food.id);
-      // A new stick in the straw pole (the first time, she hears about it).
-      if (Pole.celebrateNew()) await Promise.race([Game.say("poleNew"), wait(4000)]);
+      // A new stick in the straw pole (the first time, she hears about it
+      // and the hand shows where the pole is).
+      if (Pole.celebrateNew()) {
+        Hint.pointAt($("#pole-button"));
+        await Promise.race([Game.say("poleNew"), wait(6000)]);
+        Hint.hide();
+      }
     }
 
     if (!review && Levels.isDone(levelIndex)) {

@@ -122,9 +122,9 @@ var BUILTIN_VOICE = {
       "seconds": 3.04
     },
     "voice/poleNew": {
-      "text": "Uus kommipulk läks õlgedesse!",
+      "text": "Uus kommipulk läks õlgedesse! Puuduta õlgi ja kuula!",
       "file": "voice/poleNew.mp3",
-      "seconds": 2.5
+      "seconds": 4.72
     },
     "voice/newPlace": {
       "text": "Sa tegid kõik purgid lahti! Lähme nüüd uude kohta!",
