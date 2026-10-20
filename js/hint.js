@@ -10,6 +10,7 @@ var Hint = {
   hand: null,
   timer: null,
   spokenStep: -1, // the game step we last repeated the instruction for
+  shelfFingers: {}, // fingers on the shelf right now (see init)
 
   init: function () {
     this.hand = $("#hint-hand");
@@ -17,6 +18,30 @@ var Hint = {
     // Any touch anywhere hides the hand and restarts the countdown.
     var eventName = window.PointerEvent ? "pointerdown" : "touchstart";
     document.addEventListener(eventName, function () { self.restart(); }, true);
+    // A finger dragging the shelf sends no more pointer events, but she
+    // isn't idle: wait until it lifts. Only a finger that moved counts
+    // (a thumb just resting on the shelf, holding the tablet, doesn't).
+    var shelf = $("#shelf-scroll");
+    var fingers = this.shelfFingers;
+    document.addEventListener("touchstart", function (event) {
+      [].forEach.call(event.changedTouches, function (touch) {
+        if (shelf.contains(touch.target)) {
+          fingers[touch.identifier] = { x: touch.clientX, y: touch.clientY, target: touch.target, moved: false };
+        }
+      });
+    }, true);
+    document.addEventListener("touchmove", function (event) {
+      [].forEach.call(event.changedTouches, function (touch) {
+        var finger = fingers[touch.identifier];
+        if (finger && Math.abs(touch.clientX - finger.x) + Math.abs(touch.clientY - finger.y) >= 10) finger.moved = true;
+      });
+    }, { capture: true, passive: true });
+    ["touchend", "touchcancel"].forEach(function (name) {
+      document.addEventListener(name, function (event) {
+        [].forEach.call(event.changedTouches, function (touch) { delete fingers[touch.identifier]; });
+        self.restart();
+      }, true);
+    });
     this.restart();
   },
 
@@ -39,7 +64,14 @@ var Hint = {
   },
 
   show: function () {
-    if (Game.busy || Game.paused()) {
+    // Is a finger dragging the shelf? (A bowl redrawn under a finger never
+    // hears it lift, so a finger whose bowl is gone no longer counts.)
+    var shelf = $("#shelf-scroll");
+    var fingers = this.shelfFingers;
+    var dragging = Object.keys(fingers).some(function (id) {
+      return fingers[id].moved && shelf.contains(fingers[id].target);
+    });
+    if (Game.busy || Game.paused() || dragging) {
       this.later();
       return;
     }
@@ -48,7 +80,15 @@ var Hint = {
       this.later();
       return;
     }
-    this.pointAt(target);
+    // A bowl may be scrolled out of sight: slide the shelf to it first.
+    // (A touch meanwhile makes a new timer in restart(): then no hand.)
+    var self = this;
+    var timer = this.timer;
+    Shop.showBowl(target).then(function (ok) {
+      if (self.timer !== timer) return;
+      if (!ok || Game.busy || Game.paused()) { self.later(); return; }
+      self.pointAt(target);
+    });
 
     // Say the instruction again — only once per step, so it doesn't nag.
     if (Sound.unlocked && Game.step !== this.spokenStep && !Sound.speaking) {

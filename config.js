@@ -140,7 +140,7 @@ var CONFIG = {
   //                 (very new emojis can show as empty boxes on older tablets)
   //   foods       = the 4 foods of this place:
   //                   letter = the first letter AND first sound of the word;
-  //                            a food without a letter is on the shelf from the start
+  //                            a food without a letter has an open bowl from the start
   //                   sour: true = the bear puckers when eating it
   //
   // Wrong-answer letters are taken from this place and earlier places
@@ -148,8 +148,10 @@ var CONFIG = {
   // Use each letter only once in the whole game. Don't use both of
   // i and j, b and p, d and t, g and k, or z and s: at the start of an
   // Estonian word they sound alike, so she couldn't hear the difference.
-  // The shelf fits about 16 foods at full size; more foods make the
-  // buttons smaller.
+  // Every food has its own bowl on the shelf, in the order written here
+  // (starter foods first). A food she hasn't won yet has a closed bowl.
+  // With many foods she swipes the shelf sideways, so any number fits:
+  // sweets (🍬 🍭 🧁) or anything else are just more foods.
   // ---------------------------------------------------------------
   levels: [
     {
@@ -215,6 +217,7 @@ var CONFIG = {
     cook:       "Suhkur sulab ja mullitab! Puuduta potti veel!",
     syrupReady: "Siirup on kuldne! Puuduta potti ja kasta pulk sisse!",
     stickFull:  "Pulk on täis! Nüüd puuduta potti.",
+    bowlClosed: "See kauss on veel kinni! Salapurk teeb selle lahti.", // tapping a closed bowl
     tapStick:   "Oi, kui läikiv! Puuduta pulka ja anna see karule!",
     dipFirst:   "Kõigepealt kasta pulk siirupisse! Puuduta potti.",
     feedFirst:  "Kõigepealt anna karule süüa! Puuduta pulka.",

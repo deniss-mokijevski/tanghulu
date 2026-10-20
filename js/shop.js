@@ -1,7 +1,10 @@
 /* =====================================================================
    shop.js — the candy stick shop.
 
-   1. Tap a food  → it jumps onto the stick (up to 5, repeats allowed)
+   1. Tap a food in its bowl → it hops out onto the stick (up to 5,
+                    repeats allowed; a bowl never runs out). A food she
+                    hasn't won yet has a closed bowl. The shelf of bowls
+                    scrolls sideways when there are many.
    2. Tap the pot → the fire melts the sugar: it bubbles and turns
                     golden (like the real tanghulu sellers' copper pot),
                     then the stick dips in and comes out glossy
@@ -20,6 +23,9 @@ var Shop = {
   syrup: 0,       // how far the sugar has cooked (0 = cold)
   wish: null,     // the food the bear would like (or null)
   wishMet: false, // has the bear eaten its wish this round?
+  glideTurn: 0,   // counts the shelf's slides (a newer one or a finger stops the old one)
+  closedSaidAt: 0, // when "this bowl is still closed" was last said
+  touchedAt: 0,   // when she last touched the screen
 
   init: function () {
     var self = this;
@@ -27,59 +33,212 @@ var Shop = {
     onTap($("#stick-area"), function () { self.tapStick(); });
     onTap($("#customer"), function () { self.tapCustomer(); });
     onTap($("#wish-bubble"), function () { self.tapWish(); });
+
+    // The shelf: her finger always wins over our own slides.
+    var box = $("#shelf-scroll");
+    var touchName = window.PointerEvent ? "pointerdown" : "touchstart";
+    watchScroller(box);
+    box.addEventListener(touchName, function () { self.stopGlide(); }, true);
+    // A mouse wheel scrolls it sideways too (for grown-ups on a computer).
+    box.addEventListener("wheel", function (event) {
+      self.stopGlide();
+      Hint.restart(); // scrolling is not being idle
+      if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
+        box.scrollLeft += event.deltaY;
+        event.preventDefault();
+      }
+    }, { passive: false });
+    document.addEventListener(touchName, function () { self.touchedAt = Date.now(); }, true);
   },
 
-  // Show the shop (called when she presses ▶ and after each jar).
+  // Show the shop (called when she presses ▶).
   enter: function () {
     this.renderShelf();
     this.renderCustomer();
     this.renderStick();
     this.renderPot();
     this.newWish();
+    // Start with the food she won last in the right-most full column (the
+    // next closed bowls peek in beside it); a new game starts at the left.
+    // The food the bear wishes for is in sight too. (3 whole columns show.)
+    var won = Progress.data.unlocked;
+    var newest = null;
+    for (var i = won.length - 1; i >= 0 && !newest; i--) newest = this.shelfButton(won[i]);
+    var column = newest ? Math.floor(newest.offsetLeft / 118) : 0;
+    var wished = this.wish && this.shelfButton(this.wish.id);
+    if (wished) {
+      var wishColumn = Math.floor(wished.offsetLeft / 118);
+      if (wishColumn < column - 2) column = wishColumn + 2;
+      else if (wishColumn > column) column = wishColumn;
+    }
+    $("#shelf-scroll").scrollLeft = Math.max(0, column - 2) * 118;
+    this.nudgeShelf();
   },
 
   /* -------------------------------------------------------------------
      Drawing things
      ------------------------------------------------------------------- */
 
-  // The shelf shows every food she has unlocked.
-  //   hiddenId = a food that is about to fly in (kept invisible for now)
-  renderShelf: function (hiddenId) {
+  // The shelf: every food in config.js has its own bowl, 3 to a column,
+  // in the order written there. A food she has won is in an open bowl;
+  // the others have a closed bowl with a lid.
+  //   arrivingId = a food just won in the jar: its bowl still looks
+  //                closed until the food flies in (see jar.js)
+  renderShelf: function (arrivingId) {
     var self = this;
+    var box = $("#shelf-scroll");
     var grid = $("#shelf-grid");
+    var keep = box.scrollLeft;
+    var foods = allFoods();
     grid.innerHTML = "";
-    var foods = allFoods().filter(function (food) { return Progress.isUnlocked(food.id); });
-    this.fitShelf(foods.length);
+    grid.style.width = Math.ceil(foods.length / 3) * 118 + 16 + "px";
     foods.forEach(function (food) {
-      var button = make("button", "food-button");
-      button.type = "button";
-      button.dataset.id = food.id;
+      grid.appendChild(self.makeBowl(food, food.id === arrivingId));
+    });
+    box.scrollLeft = keep; // keep the shelf where she left it
+  },
+
+  // One bowl. The order of its parts is also the order they are drawn in:
+  // the inside of the bowl, the food, the front of the bowl, the lid.
+  makeBowl: function (food, arriving) {
+    var self = this;
+    var open = Progress.isUnlocked(food.id);
+    var place = this.placeIndex(food.id);
+    var button = make("button", "bowl glaze-" + (place < 0 ? 0 : 1 + place % 4));
+    button.type = "button";
+    button.dataset.id = food.id;
+    button.appendChild(make("span", "bowl-inside"));
+    if (open) {
+      // "food-button" = a food she can take (the hints and the jar look for it).
+      button.classList.add("food-button");
+      if (arriving) button.classList.add("arriving");
       button.setAttribute("aria-label", food.word);
       button.appendChild(Assets.picture("foods", food, { framed: true }));
-      self.showStars(button, Progress.stars(food.id));
-      if (food.id === hiddenId) button.classList.add("arriving");
-      onTap(button, function () { self.tapFood(food, button); });
-      grid.appendChild(button);
+      Assets.find("foods", food.id).then(function (found) {
+        if (found && found.paper) button.classList.add("on-paper");
+      });
+    } else {
+      button.classList.add("closed");
+      button.setAttribute("aria-label", "kinni");
+    }
+    button.appendChild(make("span", "bowl-body"));
+    if (!open || arriving) {
+      // The lid, with the icon of the place where the food is won.
+      var level = CONFIG.levels[place];
+      var lid = make("span", "bowl-lid");
+      lid.appendChild(make("span", "lid-knob"));
+      lid.appendChild(make("span", "lid-icon emoji", (level && level.icon) || "⭐"));
+      button.appendChild(lid);
+    }
+    if (open) this.showStars(button, Progress.stars(food.id));
+    onTapNoSwipe(button, function () { self.tapBowl(food, button); });
+    return button;
+  },
+
+  // Which place (level) a food belongs to: -1 for the starter foods.
+  placeIndex: function (foodId) {
+    var isStarter = CONFIG.starterFoods.some(function (food) { return food && food.id === foodId; });
+    if (isStarter) return -1;
+    for (var i = 0; i < CONFIG.levels.length; i++) {
+      var foods = CONFIG.levels[i].foods || [];
+      for (var j = 0; j < foods.length; j++) {
+        if (foods[j] && foods[j].id === foodId) return i;
+      }
+    }
+    return -1;
+  },
+
+  /* -------------------------------------------------------------------
+     Sliding the shelf sideways (when a bowl is out of sight)
+     ------------------------------------------------------------------- */
+
+  // Slide the shelf so that a bowl is fully in sight. Gives back a promise
+  // (true when it got there). Anything that isn't a bowl: nothing to do.
+  showBowl: function (button) {
+    var box = $("#shelf-scroll");
+    if (!button || !box.contains(button)) return Promise.resolve(true);
+    var left = button.offsetLeft;
+    var right = left + button.offsetWidth;
+    var goal = box.scrollLeft;
+    if (left - 16 < goal) goal = left - 16;
+    else if (right + 16 > goal + box.clientWidth) goal = right + 16 - box.clientWidth;
+    return this.glideShelf(goal);
+  },
+
+  // Slide the shelf smoothly to "goal" (made here, so it works the same
+  // on every tablet). Gives back a promise: false if a finger stopped it.
+  glideShelf: function (goal) {
+    var self = this;
+    var box = $("#shelf-scroll");
+    var from = box.scrollLeft;
+    goal = Math.max(0, Math.min(Math.round(goal), box.scrollWidth - box.clientWidth));
+    var turn = ++this.glideTurn;
+    if (Math.abs(goal - from) < 2) return Promise.resolve(true);
+    var time = Math.min(600, 250 + Math.abs(goal - from) * 0.6);
+    var started = null;
+    var done = false;
+    box.gliding = true;
+    return new Promise(function (resolve) {
+      function finish(ok) {
+        if (done) return;
+        done = true;
+        if (self.glideTurn === turn) {
+          box.gliding = false;
+          box.glideEnd = Date.now();
+        }
+        resolve(ok);
+      }
+      function step(now) {
+        if (done) return;
+        if (self.glideTurn !== turn) { finish(false); return; } // a finger took over
+        if (started === null) started = now;
+        var t = Math.min(1, (now - started) / time);
+        box.scrollLeft = Math.round(from + (goal - from) * (1 - Math.pow(1 - t, 3))); // slows down at the end
+        if (t < 1) requestAnimationFrame(step);
+        else finish(true);
+      }
+      requestAnimationFrame(step);
+      // A hidden page gets no animation frames: jump there and finish anyway
+      // (but never after a finger stopped it, or the shelf would jump back).
+      setTimeout(function () {
+        if (done) return;
+        var ok = self.glideTurn === turn;
+        if (ok) box.scrollLeft = goal;
+        finish(ok);
+      }, time + 300);
     });
   },
 
-  // Pick the button size so that every food fits on the shelf.
-  // Up to 16 foods get big 92 px buttons; more foods make them smaller.
-  fitShelf: function (count) {
-    var width = 386, height = 420;  // the inside of the shelf, in pixels
-    var gap = 6, rowGap = 12;
-    var cols, cell, rows;
-    for (cols = 4; cols < 12; cols++) {
-      if (cols > 4) rowGap = 8;        // pack a little tighter when it's crowded
-      cell = Math.min(92, Math.floor((width - (cols - 1) * gap) / cols));
-      rows = Math.ceil(count / cols);
-      if (rows * (cell + 4) + (rows - 1) * rowGap <= height) break;
+  // Her finger (or a mouse wheel) stops any slide at once.
+  stopGlide: function () {
+    var box = $("#shelf-scroll");
+    this.glideTurn++;
+    if (box.gliding) {
+      box.gliding = false;
+      box.glideEnd = Date.now();
     }
-    var shelf = $("#shelf");
-    shelf.style.setProperty("--cols", cols);
-    shelf.style.setProperty("--cell", cell + "px");
-    shelf.style.setProperty("--row", (cell + 4 + rowGap) + "px");
-    $("#shelf-grid").classList.toggle("small", cell < 80);
+  },
+
+  // Once per visit: if she hasn't touched anything yet, the shelf slides
+  // a little towards the hidden bowls and back ("there is more here").
+  // Only 40 px, so every bowl stays where her finger expects it.
+  nudgeShelf: function () {
+    var self = this;
+    var box = $("#shelf-scroll");
+    var since = Date.now();
+    setTimeout(function () {
+      var home = box.scrollLeft;
+      var room = box.scrollWidth - box.clientWidth - home;
+      var step = room >= 40 ? 40 : (home >= 40 ? -40 : 0);
+      if (self.touchedAt > since || Game.busy || Game.screen !== "shop" || !step) return;
+      self.glideShelf(home + step).then(function (ok) {
+        if (!ok) return;
+        var turn = self.glideTurn; // a finger on the shelf or a newer slide changes it
+        wait(250).then(function () {
+          if (self.glideTurn === turn) self.glideShelf(home);
+        });
+      });
+    }, 1500);
   },
 
   // A small ⭐ on foods she reviewed (with a number when there are more).
@@ -134,8 +293,43 @@ var Shop = {
   },
 
   /* -------------------------------------------------------------------
-     Tapping a food on the shelf
+     Tapping a bowl on the shelf
      ------------------------------------------------------------------- */
+  tapBowl: function (food, button) {
+    if (Game.busy || Game.screen !== "shop") return;
+    // A bowl that only peeks out at the edge: slide it in first.
+    var box = $("#shelf-scroll");
+    var middle = button.offsetLeft + button.offsetWidth / 2 - box.scrollLeft;
+    if (middle < 0 || middle > box.clientWidth) {
+      this.showBowl(button);
+      return;
+    }
+    if (button.classList.contains("closed")) this.tapClosed(button);
+    else this.tapFood(food, button);
+  },
+
+  // A closed bowl (a food she hasn't won yet): the lid rattles.
+  tapClosed: function (button) {
+    replayClass(button, "rattle", 450);
+    Sound.fx("clink");
+    // The words only now and then, and never over other speech.
+    if (!Sound.speaking && Date.now() - this.closedSaidAt > 8000) {
+      this.closedSaidAt = Date.now();
+      Game.say("bowlClosed");
+    }
+  },
+
+  // The lid of a new food's bowl pops off (while the food flies in).
+  openBowl: function (button) {
+    var lid = button.querySelector(".bowl-lid");
+    if (!lid) return;
+    var at = Stage.where(lid);
+    Sound.fx("lid");
+    Effects.sparkles(at.x, at.y, 6);
+    lid.classList.add("opening");
+    setTimeout(function () { lid.remove(); }, 600);
+  },
+
   tapFood: function (food, button) {
     if (Game.busy || Game.screen !== "shop") return;
 
@@ -170,12 +364,14 @@ var Shop = {
     if (this.stick.length >= CONFIG.maxOnStick) parts.push(Sound.phrasePart("stickFull"));
     Sound.speak(parts);
 
-    // Put the food on the stick (invisible), fly a copy there, then show it.
+    // Put the food on the stick (invisible), fly a copy there from the
+    // bowl, then show it. The bowl fills up again (it never runs out).
     var piece = this.makeStickFood(food);
     piece.style.visibility = "hidden";
     $("#stick-foods").appendChild(piece);
-    var from = Stage.where(button);
+    var from = Stage.where(button.querySelector(".picture") || button);
     var to = Stage.where(piece);
+    replayClass(button, "took", 350);
     var flyer = make("div");
     flyer.style.fontSize = "62px";
     flyer.appendChild(Assets.picture("foods", food, { framed: false }));
@@ -529,5 +725,8 @@ var Shop = {
     if (Game.screen !== "shop" || !this.wish) return;
     replayClass($("#wish-bubble"), "wiggle", 500);
     Sound.speak(this.wishParts());
+    // Show where that food's bowl is on the shelf.
+    var bowl = this.shelfButton(this.wish.id);
+    if (bowl) this.showBowl(bowl).then(function () { replayClass(bowl, "wiggle", 500); });
   },
 };

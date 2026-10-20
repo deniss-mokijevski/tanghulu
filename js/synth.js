@@ -107,6 +107,22 @@ var Synth = {
     this.tone(ctx, out, { start: 0.05, freq: 5200, length: 0.12, volume: 0.06 });
   },
 
+  // A closed bowl's lid rattles: two quick little china "tink"s.
+  clink: function (ctx, out) {
+    for (var i = 0; i < 2; i++) {
+      var pitch = randomBetween(2500, 2900) + i * 380;
+      this.tone(ctx, out, { start: i * 0.09, freq: pitch, to: pitch * 0.97, length: 0.16, volume: 0.13, type: "triangle" });
+      this.burst(ctx, out, { start: i * 0.09, freq: 6000, q: 3, filter: "bandpass", length: 0.03, volume: 0.25 });
+    }
+  },
+
+  // A bowl's lid lifts off: a soft "plop", then the china rings.
+  lid: function (ctx, out) {
+    this.tone(ctx, out, { freq: 300, to: 620, length: 0.12, volume: 0.25 });
+    this.tone(ctx, out, { start: 0.1, freq: 2093, length: 0.5, volume: 0.1, type: "triangle" });
+    this.tone(ctx, out, { start: 0.14, freq: 3136, length: 0.4, volume: 0.06, type: "triangle" });
+  },
+
   // Food jumps onto the stick.
   pop: function (ctx, out) {
     this.tone(ctx, out, {

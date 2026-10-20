@@ -433,7 +433,11 @@ var Game = {
       });
     });
     document.addEventListener("touchmove", function (event) {
-      if (!Parent.isOpen && event.cancelable) event.preventDefault();
+      if (Parent.isOpen || !event.cancelable) return;
+      // The shelf of bowls may scroll sideways (only in the shop, so it
+      // can't move while a won food flies into its bowl); nothing else moves.
+      if (Game.screen === "shop" && event.target.closest && event.target.closest(".scroller")) return;
+      event.preventDefault();
     }, { passive: false });
   },
 };

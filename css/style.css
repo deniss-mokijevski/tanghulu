@@ -281,55 +281,220 @@ body.dark-floor #artist-line { color: #fff; }   /* the artist line sits on the f
 .level-slot.locked .picture { filter: brightness(0); opacity: 0.25; }
 .level-slot.just-won { animation: pop-in 0.6s ease-out; }
 
-/* ---------- Shelf ---------- */
-/* shop.js picks the button size (--cell) and the row spacing (--row) so
-   that all unlocked foods fit. With up to 16 foods the buttons are 92 px. */
+/* ---------- Shelf: a cupboard of bowls (pialas) ---------- */
+/* Every food has its own bowl, 3 to a column (shop.js renderShelf).
+   With many foods the bowls scroll sideways inside the cupboard. */
 #shelf {
-  --cell: 92px;
-  --row: 108px;                        /* one row + the gap below it */
   position: absolute;
   left: 12px;
   top: 108px;
   width: 422px;
   height: 456px;
   box-sizing: border-box;
-  padding: 10px 10px;
   border-radius: 18px;
+  /* The same boards as on #shelf-grid, so they still show when the
+     shelf bounces at its ends (iPad) */
   background:
-    /* a wooden board under each row */
     repeating-linear-gradient(to bottom,
-      transparent 0, transparent calc(var(--cell) + 4px),
-      var(--wood-dark) calc(var(--cell) + 4px), var(--wood-dark) calc(var(--row) - 1px),
-      transparent calc(var(--row) - 1px), transparent var(--row)),
+      transparent 0, transparent 138px,
+      #b98048 138px, #b98048 140px,
+      var(--wood-dark) 140px, var(--wood-dark) 146px),
     linear-gradient(#f1d3a8, #e7c08c);
-  background-position: 0 10px, 0 0;
   border: 8px solid var(--wood);
   box-shadow: 0 8px 0 rgba(0, 0, 0, 0.15);
 }
-#shelf-grid {
-  display: grid;
-  grid-template-columns: repeat(var(--cols, 4), var(--cell));
-  grid-auto-rows: calc(var(--cell) + 4px);
-  row-gap: calc(var(--row) - var(--cell) - 4px);
-  column-gap: 6px;
-  align-items: end;
+/* Soft shade at both sides: the bowls slide into the cupboard */
+#shelf::after {
+  content: "";
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  border-radius: 10px;
+  box-shadow: inset 16px 0 12px -12px rgba(90, 50, 20, 0.35), inset -16px 0 12px -12px rgba(90, 50, 20, 0.35);
+  pointer-events: none;
+  z-index: 1;
 }
-.food-button {
+#shelf-scroll {
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  touch-action: pan-x;                 /* sideways swipes scroll it; nothing else */
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;               /* no scroll bar (Firefox) */
+}
+#shelf-scroll::-webkit-scrollbar { display: none; }
+#shelf-grid {
   position: relative;
-  width: var(--cell);
-  height: var(--cell);
-  font-size: calc(var(--cell) * 0.68);
+  box-sizing: border-box;
+  height: 440px;
+  min-width: 100%;                     /* shop.js sets the width */
+  padding: 0 8px;
+  display: grid;
+  grid-auto-flow: column;              /* fill column by column */
+  grid-template-rows: repeat(3, 138px);
+  grid-auto-columns: 118px;
+  row-gap: 8px;
+  /* The wood (a board under each row) scrolls along with the bowls */
+  background:
+    repeating-linear-gradient(to bottom,
+      transparent 0, transparent 138px,
+      #b98048 138px, #b98048 140px,
+      var(--wood-dark) 140px, var(--wood-dark) 146px),
+    linear-gradient(#f1d3a8, #e7c08c);
+}
+
+/* One bowl. Its glaze color shows the place where its food is won. */
+.glaze-0 { --glaze: #fdfaf3; --glaze-dark: #c9d3e4; --pattern: #2457b3; } /* white + cobalt: starter foods */
+.glaze-1 { --glaze: #3cc1c9; --glaze-dark: #1f8f99; --pattern: #ffffff; } /* turquoise */
+.glaze-2 { --glaze: #ffd257; --glaze-dark: #d99a1e; --pattern: #2b7bd6; } /* sunny yellow */
+.glaze-3 { --glaze: #5a55c9; --glaze-dark: #36328f; --pattern: #ffd45c; } /* night blue + gold */
+.glaze-4 { --glaze: #ff8fab; --glaze-dark: #d9577a; --pattern: #ffffff; } /* pomegranate pink */
+.bowl {
+  position: relative;
+  width: 118px;
+  height: 138px;
+  font-size: 62px;
+  touch-action: pan-x;
+  transform-origin: 50% 100%;          /* wiggles rock it on its foot */
   transition: transform 0.15s;
 }
-#shelf-grid.small .badge { width: 22px; height: 22px; font-size: 13px; right: -5px; bottom: -5px; }
-.food-button:active { transform: scale(0.92); }
-.food-button.wiggle { animation: wiggle 0.5s ease-in-out; }
-.food-button.arriving { visibility: hidden; }
+.bowl > span { position: absolute; pointer-events: none; }
+.bowl::before {                        /* the little foot, standing on the board */
+  content: "";
+  position: absolute;
+  left: 37px;
+  top: 130px;
+  width: 44px;
+  height: 8px;
+  border-radius: 0 0 10px 10px;
+  background: var(--glaze-dark);
+  box-shadow: 0 3px 3px rgba(0, 0, 0, 0.18);
+  pointer-events: none;
+}
+.bowl-inside {                         /* the inside, behind the food */
+  left: 7px;
+  top: 76px;
+  width: 104px;
+  height: 28px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 3px solid var(--pattern);
+  background: radial-gradient(ellipse at 50% 75%, #fffaf0 35%, var(--glaze-dark));
+}
+.bowl .picture {                       /* the food (or her drawing) */
+  position: absolute;
+  left: 15px;
+  top: 28px;
+  width: 88px;
+  height: 88px;
+}
+.bowl-body {                           /* the front of the bowl, in front of the food */
+  left: 7px;
+  top: 90px;
+  width: 104px;
+  height: 42px;
+  border-radius: 0 0 52px 52px / 0 0 36px 36px;
+  background:
+    radial-gradient(circle, var(--pattern) 0, var(--pattern) 3px, transparent 3.5px) 5px 18px / 14px 10px repeat-x,
+    radial-gradient(52px 14px at 50% 0, transparent 98%, var(--pattern) 100%, var(--pattern) 128%,
+                    var(--glaze) 133%, var(--glaze) 210%, var(--glaze-dark) 400%);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.12);
+}
+.bowl-body::before {                   /* a little shine */
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 16px;
+  width: 9px;
+  height: 15px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  transform: rotate(20deg);
+}
+.bowl-lid {                            /* a closed bowl's lid: the rim… */
+  left: 5px;
+  top: 78px;
+  width: 108px;
+  height: 28px;
+  border-radius: 50%;
+  transform-origin: 50% 100%;
+  background: radial-gradient(ellipse at 50% 30%, var(--glaze) 50%, var(--glaze-dark));
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.12);
+}
+.bowl-lid::before {                    /* …and the dome */
+  content: "";
+  position: absolute;
+  left: 12px;
+  width: 84px;
+  bottom: 12px;
+  height: 40px;
+  border-radius: 42px 42px 12px 12px / 36px 36px 8px 8px;
+  background:
+    radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.75) 0, rgba(255, 255, 255, 0.75) 5px, transparent 6px),
+    linear-gradient(90deg, var(--glaze-dark), var(--glaze) 30%, var(--glaze) 62%, var(--glaze-dark));
+}
+.lid-knob {
+  position: absolute;
+  left: 43px;
+  top: -36px;
+  width: 22px;
+  height: 14px;
+  border-radius: 11px 11px 4px 4px;
+  background: var(--pattern);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.2);
+}
+.lid-icon {                            /* the place's icon, as on the level bar */
+  position: absolute;
+  left: 34px;
+  top: -22px;
+  width: 40px;
+  height: 28px;
+  font-size: 22px;
+  line-height: 28px;
+  text-align: center;
+}
+/* The ✏️ / 🖍️ badge at the food's top right (the bowl hides the bottom) */
+.bowl .picture .badge { top: -4px; right: -10px; bottom: auto; width: 26px; height: 26px; font-size: 15px; }
+/* The dashed "draw me" frame becomes a ball resting in the bowl */
+.bowl .picture.framed.is-placeholder { border-radius: 50%; }
+.bowl .star-badge { left: 4px; top: 24px; }
+
+/* What bowls do */
+.food-button:active { transform: scale(0.95); }
+.bowl.wiggle { animation: wiggle 0.5s ease-in-out; }
+.bowl.arriving .picture, .bowl.arriving .star-badge { visibility: hidden; }
+.bowl.took .picture { animation: bowl-refill 0.35s ease-out; } /* the bowl fills up again */
+@keyframes bowl-refill {
+  from { transform: translateY(30px) scale(0.85); opacity: 0.3; }
+  to { transform: none; opacity: 1; }
+}
+/* A drawing on white paper that could not be cleaned is blended into the
+   bowl: animate the picture inside instead (else the paper flashes white),
+   and give the bowl a plain inside (else its rim shows through the food). */
+.bowl.took .picture.has-paper { animation: none; }
+.bowl.took .picture.has-paper > * { animation: bowl-refill 0.35s ease-out; }
+.bowl.on-paper .bowl-inside { border-color: #fffaf0; background: #fffaf0; }
+.bowl.rattle .bowl-lid { animation: lid-rattle 0.45s ease-in-out; }
+@keyframes lid-rattle {
+  0%, 100% { transform: none; }
+  15% { transform: translateY(-9px) rotate(-7deg); }
+  30% { transform: none; }
+  45% { transform: translateY(-6px) rotate(6deg); }
+  60% { transform: none; }
+  78% { transform: translateY(-3px) rotate(-2deg); }
+}
+.bowl-lid.opening { animation: bowl-lid-off 0.6s ease-out forwards; }
+@keyframes bowl-lid-off {
+  0% { transform: none; opacity: 1; }
+  35% { transform: translate(4px, -26px) rotate(-12deg); opacity: 1; }
+  100% { transform: translate(30px, -40px) rotate(28deg); opacity: 0; }
+}
 .food-button.new-food::after {
   content: "";
   position: absolute;
-  top: -6px; left: -6px; right: -6px; bottom: -6px;
-  border-radius: 22px;
+  top: 22px; left: 2px; right: 2px; bottom: -2px;
+  border-radius: 44px 44px 54px 54px;
   box-shadow: 0 0 0 4px #fff, 0 0 18px 6px #ffd23f;
   animation: glow 1s ease-in-out infinite alternate;
   pointer-events: none;

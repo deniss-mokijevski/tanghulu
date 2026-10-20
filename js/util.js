@@ -58,6 +58,81 @@ function onTap(element, handler) {
   }
 }
 
+// Like onTap, but for things on the shelf, which scrolls sideways: it
+// waits until the finger lifts, so a swipe (to scroll) is not a tap.
+// The finger may wobble a little (20 px) and it is still a tap.
+function onTapNoSwipe(element, handler) {
+  var start = null;
+  function scroller() { return element.closest ? element.closest(".scroller") : null; }
+  function begin(x, y) {
+    var box = scroller();
+    // A finger that only stops a shelf still gliding from a swipe is not a tap.
+    var now = Date.now();
+    if (box && now - (box.movedAt || 0) < 100 && box.movedAt - (box.movedBefore || 0) < 100) {
+      start = null;
+      return;
+    }
+    start = { x: x, y: y, scroll: box ? box.scrollLeft : 0 };
+  }
+  function end(x, y, event) {
+    if (!start) return;
+    var box = scroller();
+    var moved = Math.abs(x - start.x) + Math.abs(y - start.y);
+    var scrolled = box ? Math.abs(box.scrollLeft - start.scroll) : 0;
+    start = null;
+    if (moved < 20 && scrolled < 6) handler(event);
+  }
+  // A finger that went far (even if it came back) was a swipe, not a tap.
+  element.addEventListener("touchmove", function (event) {
+    var touch = event.changedTouches[0];
+    if (start && Math.abs(touch.clientX - start.x) + Math.abs(touch.clientY - start.y) >= 20) start = null;
+  }, { passive: true });
+  if (window.PointerEvent) {
+    var cancelled = false;
+    element.addEventListener("pointerdown", function (event) {
+      if (event.button > 0) return;
+      cancelled = false;
+      begin(event.clientX, event.clientY);
+    });
+    element.addEventListener("pointerup", function (event) { end(event.clientX, event.clientY, event); });
+    // The browser took over the finger to scroll. If the finger then lifts
+    // close to where it started and the shelf hardly moved, it was a
+    // smeared tap after all (small fingers slide a bit).
+    element.addEventListener("pointercancel", function () { cancelled = true; });
+    element.addEventListener("touchend", function (event) {
+      if (cancelled && start) {
+        var touch = event.changedTouches[0];
+        end(touch.clientX, touch.clientY, event);
+      }
+      cancelled = false;
+    });
+  } else {
+    element.addEventListener("touchstart", function (event) {
+      begin(event.touches[0].clientX, event.touches[0].clientY);
+    });
+    element.addEventListener("touchend", function (event) {
+      var touch = event.changedTouches[0];
+      end(touch.clientX, touch.clientY, event);
+      if (event.cancelable) event.preventDefault(); // no extra mouse events
+    });
+    element.addEventListener("touchcancel", function () { start = null; });
+    element.addEventListener("mousedown", function (event) { begin(event.clientX, event.clientY); });
+    element.addEventListener("mouseup", function (event) { end(event.clientX, event.clientY, event); });
+  }
+}
+
+// A sideways shelf: remember when the browser itself keeps it moving (a
+// swipe that glides on). Our own slides (box.gliding) don't count. Two
+// scroll events close together mean "gliding"; a single jump doesn't.
+function watchScroller(box) {
+  box.addEventListener("scroll", function () {
+    var now = Date.now();
+    if (box.gliding || now - (box.glideEnd || 0) < 80) return;
+    box.movedBefore = box.movedAt || 0;
+    box.movedAt = now;
+  }, { passive: true });
+}
+
 // Restart a CSS animation class (e.g. "wiggle") on an element.
 function replayClass(element, className, ms) {
   element.classList.remove(className);

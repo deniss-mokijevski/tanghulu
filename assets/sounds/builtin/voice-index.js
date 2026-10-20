@@ -41,6 +41,11 @@ var BUILTIN_VOICE = {
       "file": "voice/stickFull.mp3",
       "seconds": 3.34
     },
+    "voice/bowlClosed": {
+      "text": "See kauss on veel kinni! Salapurk teeb selle lahti.",
+      "file": "voice/bowlClosed.mp3",
+      "seconds": 4.13
+    },
     "voice/tapStick": {
       "text": "Oi, kui läikiv! Puuduta pulka ja anna see karule!",
       "file": "voice/tapStick.mp3",
