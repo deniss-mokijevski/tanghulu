@@ -117,7 +117,7 @@ async function synthesize(text) {
       if (!response.ok) throw new Error("HTTP " + response.status + " " + (await response.text()).slice(0, 200));
       return parseWav(Buffer.from(await response.arrayBuffer()));
     } catch (error) {
-      if (attempt === 4) throw error;
+      if (attempt === 4) { error.fromService = true; throw error; }
       await new Promise((resolve) => setTimeout(resolve, 2000 * attempt));
     }
   }
@@ -279,7 +279,7 @@ async function main() {
 
 main().catch((error) => {
   console.error("\nSomething went wrong: " + error.message);
-  if (/fetch failed|HTTP \d|ENOTFOUND|ECONN|ETIMEDOUT|EAI_AGAIN|network/i.test(error.message)) {
+  if (error.fromService) {
     console.error("Check the internet connection and try again.");
   }
   process.exit(1);

@@ -297,8 +297,12 @@ var Parent = {
         counts.silent + " silent (no voice at all)" +
         (counts.wordQuestion ? ", " + counts.wordQuestion + " letter names nothing can say yet " +
           "(those jars ask for the first letter of the word instead)." : ".");
-      if (silent.length === 0) {
+      if (silent.length === 0 && counts.wordQuestion === 0) {
         list.appendChild(make("li", null, "None — every line can be heard. 🎉"));
+      }
+      if (counts.wordQuestion) {
+        list.appendChild(make("li", null, counts.wordQuestion + " letter names: record them (see Letter " +
+          "sounds below) or run node tools/make-voice.js once."));
       }
       silent.forEach(function (part) {
         list.appendChild(make("li", null, "assets/" + part.file + ".mp3 — \"" + part.text + "\""));

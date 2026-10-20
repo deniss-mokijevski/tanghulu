@@ -184,6 +184,7 @@ var Jar = {
     }
     Sound.fx("pop");
 
+    var firstOnPole = false;
     if (review) {
       // Review jar: she earns a star on that food.
       Progress.addStar(food.id);
@@ -196,13 +197,8 @@ var Jar = {
       await Promise.race([Game.say("star"), wait(4000)]);
     } else {
       Game.renderLevelBar(levelIndex, food.id);
-      // A new stick in the straw pole (the first time, she hears about it
-      // and the hand shows where the pole is).
-      if (Pole.celebrateNew()) {
-        Hint.pointAt($("#pole-button"));
-        await Promise.race([Game.say("poleNew"), wait(6000)]);
-        Hint.hide();
-      }
+      // A new stick in the straw pole (wiggles; true the very first time).
+      firstOnPole = Pole.celebrateNew();
     }
 
     if (!review && Levels.isDone(levelIndex)) {
@@ -210,6 +206,14 @@ var Jar = {
     }
     this.current = null;
     Game.busy = false;
-    Game.backToShop();
+    if (firstOnPole) {
+      // The first won stick: back in the shop (so taps work), and the
+      // straw pole is shown to her before the next candy stick.
+      Game.backToShop(true);
+      Shop.newWish();
+      Pole.announce();
+    } else {
+      Game.backToShop();
+    }
   },
 };

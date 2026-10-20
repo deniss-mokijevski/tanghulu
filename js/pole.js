@@ -59,6 +59,20 @@ var Pole = {
     return first;
   },
 
+  // The first won stick: the hand points at the pole and the voice says
+  // "tap the straw and listen". The shop already works, so she can do it
+  // right away; if she doesn't, the next candy stick starts as usual.
+  announce: async function () {
+    var step = Game.step;
+    clearTimeout(Hint.timer); // no other hint while this is said
+    Hint.pointAt($("#pole-button"));
+    // (At least 2.5 s, so the hand doesn't just flash when nothing can say the line.)
+    var said = await Promise.all([Promise.race([Game.say("poleNew"), wait(6000)]), wait(2500)]);
+    if (said[0] === false || Game.step !== step || Game.screen !== "shop") return; // she did something
+    Hint.restart(); // hides the hand
+    Sound.speak([Sound.phrasePart("again")].concat(Shop.wishParts()));
+  },
+
   // A quick double tap must not open and close (or close and reopen) it.
   tooSoon: function () {
     return Date.now() - this.changedAt < 600;

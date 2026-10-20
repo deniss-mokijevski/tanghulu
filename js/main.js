@@ -61,8 +61,10 @@ var Game = {
     // Numbers the game can use: 1 to 5 foods on a stick, 1 to 10 pot taps.
     CONFIG.maxOnStick = Math.max(1, Math.min(5, Math.round(Number(CONFIG.maxOnStick)) || 5));
     var warn = function (text) { console.warn("config.js: " + text); };
-    var taps = Math.round(Number(CONFIG.potTaps));
-    if (CONFIG.potTaps == null || isNaN(taps)) {
+    var raw = CONFIG.potTaps;
+    var isNumber = typeof raw === "number" || (typeof raw === "string" && raw.trim() !== "");
+    var taps = isNumber ? Math.round(Number(raw)) : NaN;
+    if (raw == null || isNaN(taps)) {
       if (CONFIG.potTaps != null) warn("potTaps should be a number like 3.");
       taps = 3;
     }
@@ -251,12 +253,13 @@ var Game = {
     }
   },
 
-  // Back to the shop after the jar (or from the straw pole: fromPole = true).
-  backToShop: function (fromPole) {
+  // Back to the shop after the jar, with a new round (the bear's next
+  // wish). noNewRound: from the straw pole, or when the pole is shown first.
+  backToShop: function (noNewRound) {
     this.screen = "shop";
     this.step++;
     Hint.restart();
-    if (!fromPole) this.newRound();
+    if (!noNewRound) this.newRound();
   },
 
   // A new candy stick: the bear makes a new wish.
