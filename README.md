@@ -381,6 +381,7 @@ in a different way; the game looks for both ways, so it should still work.
 | `cook.mp3` | "Suhkur sulab ja mullitab! Puuduta potti veel!" |
 | `syrupReady.mp3` | "Siirup on kuldne! Puuduta potti ja kasta pulk sisse!" |
 | `stickFull.mp3` | "Pulk on täis! Nüüd puuduta potti." |
+| `bowlClosed.mp3` | "See kauss on veel kinni! Salapurk teeb selle lahti." (tapping a closed bowl) |
 | `tapStick.mp3` | "Oi, kui läikiv! Puuduta pulka ja anna see karule!" |
 | `dipFirst.mp3` | "Kõigepealt kasta pulk siirupisse! Puuduta potti." |
 | `feedFirst.mp3` | "Kõigepealt anna karule süüa! Puuduta pulka." |
@@ -427,6 +428,8 @@ Without these files the game makes the sounds itself.
 | `unlock.mp3` | the jar's lock pops open |
 | `sparkle.mp3` | sparkles around the opened jar |
 | `star.mp3` | a star appears |
+| `clink.mp3` | the lid of a closed bowl rattles |
+| `lid.mp3` | a bowl's lid comes off (a new food) |
 | `cheer.mp3` | a happy fanfare (finished stick, new place) |
 
 ### Music (optional): `assets/music/`

@@ -433,7 +433,10 @@ var Game = {
       });
     });
     document.addEventListener("touchmove", function (event) {
-      if (!Parent.isOpen && event.cancelable) event.preventDefault();
+      if (Parent.isOpen || !event.cancelable) return;
+      // The shelf of bowls may scroll sideways; nothing else moves.
+      if (event.target.closest && event.target.closest(".scroller")) return;
+      event.preventDefault();
     }, { passive: false });
   },
 };

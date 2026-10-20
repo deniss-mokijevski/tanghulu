@@ -215,6 +215,7 @@ var CONFIG = {
     cook:       "Suhkur sulab ja mullitab! Puuduta potti veel!",
     syrupReady: "Siirup on kuldne! Puuduta potti ja kasta pulk sisse!",
     stickFull:  "Pulk on täis! Nüüd puuduta potti.",
+    bowlClosed: "See kauss on veel kinni! Salapurk teeb selle lahti.", // tapping a closed bowl
     tapStick:   "Oi, kui läikiv! Puuduta pulka ja anna see karule!",
     dipFirst:   "Kõigepealt kasta pulk siirupisse! Puuduta potti.",
     feedFirst:  "Kõigepealt anna karule süüa! Puuduta pulka.",

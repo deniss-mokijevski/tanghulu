@@ -32,7 +32,7 @@ var Sound = {
   utterances: [],     // keeps sentences alive until they finish (Safari needs this)
 
   FX: ["pop", "crunch", "crack", "dip", "bubble", "pling", "snap", "shine",
-       "sparkle", "unlock", "cheer", "whoosh", "boing", "sour", "star"],
+       "sparkle", "unlock", "cheer", "whoosh", "boing", "sour", "star", "clink", "lid"],
 
   /* -------------------------------------------------------------------
      Setup (runs when the page opens — no sound yet)

@@ -58,6 +58,47 @@ function onTap(element, handler) {
   }
 }
 
+// Like onTap, but for things on the shelf, which scrolls sideways: it
+// waits until the finger lifts, so a swipe (to scroll) is not a tap.
+// The finger may wobble a little (12 px) and it is still a tap.
+function onTapNoSwipe(element, handler) {
+  var start = null;
+  function scroller() { return element.closest ? element.closest(".scroller") : null; }
+  function begin(x, y) {
+    var box = scroller();
+    start = { x: x, y: y, scroll: box ? box.scrollLeft : 0 };
+  }
+  function end(x, y, event) {
+    if (!start) return;
+    var box = scroller();
+    var moved = Math.abs(x - start.x) + Math.abs(y - start.y);
+    var scrolled = box ? Math.abs(box.scrollLeft - start.scroll) : 0;
+    start = null;
+    if (moved < 12 && scrolled < 4) handler(event);
+  }
+  if (window.PointerEvent) {
+    element.addEventListener("pointerdown", function (event) {
+      if (event.button > 0) return;
+      begin(event.clientX, event.clientY);
+    });
+    element.addEventListener("pointerup", function (event) { end(event.clientX, event.clientY, event); });
+    // The browser took over the finger to scroll: not a tap.
+    element.addEventListener("pointercancel", function () { start = null; });
+  } else {
+    element.addEventListener("touchstart", function (event) {
+      begin(event.touches[0].clientX, event.touches[0].clientY);
+    });
+    element.addEventListener("touchend", function (event) {
+      var touch = event.changedTouches[0];
+      end(touch.clientX, touch.clientY, event);
+      if (event.cancelable) event.preventDefault(); // no extra mouse events
+    });
+    element.addEventListener("touchcancel", function () { start = null; });
+    element.addEventListener("mousedown", function (event) { begin(event.clientX, event.clientY); });
+    element.addEventListener("mouseup", function (event) { end(event.clientX, event.clientY, event); });
+  }
+}
+
 // Restart a CSS animation class (e.g. "wiggle") on an element.
 function replayClass(element, className, ms) {
   element.classList.remove(className);
