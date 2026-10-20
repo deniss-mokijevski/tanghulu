@@ -42,6 +42,7 @@ var Shop = {
     // A mouse wheel scrolls it sideways too (for grown-ups on a computer).
     box.addEventListener("wheel", function (event) {
       self.stopGlide();
+      Hint.restart(); // scrolling is not being idle
       if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
         box.scrollLeft += event.deltaY;
         event.preventDefault();
@@ -53,18 +54,24 @@ var Shop = {
   // Show the shop (called when she presses ▶).
   enter: function () {
     this.renderShelf();
-    // Start with the food she won last in the right-most full column (the
-    // next closed bowls peek in beside it); a new game starts at the left.
-    var won = Progress.data.unlocked;
-    var newest = null;
-    for (var i = won.length - 1; i >= 0 && !newest; i--) newest = this.shelfButton(won[i]);
-    $("#shelf-scroll").scrollLeft = newest ? Math.max(0, Math.floor(newest.offsetLeft / 118) - 2) * 118 : 0;
     this.renderCustomer();
     this.renderStick();
     this.renderPot();
     this.newWish();
-    // The food the bear wishes for is in sight too.
-    if (this.wish) this.showBowl(this.shelfButton(this.wish.id), true);
+    // Start with the food she won last in the right-most full column (the
+    // next closed bowls peek in beside it); a new game starts at the left.
+    // The food the bear wishes for is in sight too. (3 whole columns show.)
+    var won = Progress.data.unlocked;
+    var newest = null;
+    for (var i = won.length - 1; i >= 0 && !newest; i--) newest = this.shelfButton(won[i]);
+    var column = newest ? Math.floor(newest.offsetLeft / 118) : 0;
+    var wished = this.wish && this.shelfButton(this.wish.id);
+    if (wished) {
+      var wishColumn = Math.floor(wished.offsetLeft / 118);
+      if (wishColumn < column - 2) column = wishColumn + 2;
+      else if (wishColumn > column) column = wishColumn;
+    }
+    $("#shelf-scroll").scrollLeft = Math.max(0, column - 2) * 118;
     this.nudgeShelf();
   },
 
@@ -147,7 +154,7 @@ var Shop = {
 
   // Slide the shelf so that a bowl is fully in sight. Gives back a promise
   // (true when it got there). Anything that isn't a bowl: nothing to do.
-  showBowl: function (button, instant) {
+  showBowl: function (button) {
     var box = $("#shelf-scroll");
     if (!button || !box.contains(button)) return Promise.resolve(true);
     var left = button.offsetLeft;
@@ -155,10 +162,6 @@ var Shop = {
     var goal = box.scrollLeft;
     if (left - 16 < goal) goal = left - 16;
     else if (right + 16 > goal + box.clientWidth) goal = right + 16 - box.clientWidth;
-    if (instant) {
-      box.scrollLeft = goal;
-      return Promise.resolve(true);
-    }
     return this.glideShelf(goal);
   },
 

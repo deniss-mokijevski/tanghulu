@@ -82,6 +82,11 @@ function onTapNoSwipe(element, handler) {
     start = null;
     if (moved < 20 && scrolled < 6) handler(event);
   }
+  // A finger that went far (even if it came back) was a swipe, not a tap.
+  element.addEventListener("touchmove", function (event) {
+    var touch = event.changedTouches[0];
+    if (start && Math.abs(touch.clientX - start.x) + Math.abs(touch.clientY - start.y) >= 20) start = null;
+  }, { passive: true });
   if (window.PointerEvent) {
     var cancelled = false;
     element.addEventListener("pointerdown", function (event) {
